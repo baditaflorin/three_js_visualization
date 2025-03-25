@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Glowdrop Catcher Evolved</title>
+    <title>Glowdrop Catcher Debug</title>
     <style>
         /* Basic reset and full window setup */
         html, body {
@@ -20,31 +20,140 @@
             background-color: #2a2a5a; /* Canvas background color */
             cursor: none; /* Hide the default mouse cursor */
         }
-        #info {
+        #info { /* Score display */
             position: absolute;
             top: 15px;
             left: 15px;
             font-size: 28px;
             z-index: 10;
             text-shadow: 2px 2px 3px rgba(0,0,0,0.7);
-            pointer-events: none; /* Prevent score from interfering with canvas clicks if needed */
+            pointer-events: none;
+        }
+        /* --- Debug Panel Styles --- */
+        #debugPanel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.75);
+            color: #0f0; /* Green text */
+            padding: 15px;
+            border: 1px solid #0a0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            z-index: 100; /* Ensure it's above everything */
+            display: none; /* Initially hidden */
+            min-width: 220px;
+            max-height: 90vh; /* Limit height */
+            overflow-y: auto; /* Add scroll if content overflows */
+        }
+        #debugPanel h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 14px;
+            border-bottom: 1px solid #0a0;
+            padding-bottom: 5px;
+            color: #0f0;
+        }
+        #debugPanel div {
+            margin-bottom: 6px;
+            white-space: nowrap;
+        }
+        #debugPanel span { /* Display values */
+            color: #ff0; /* Yellow values */
+            margin-left: 5px;
+        }
+        #debugPanel label {
+            display: inline-block;
+            width: 140px; /* Adjust as needed */
+            color: #0f0;
+        }
+        #debugPanel input[type="number"] {
+            width: 65px; /* Adjust as needed */
+            background-color: #111;
+            color: #0f0;
+            border: 1px solid #0a0;
+            padding: 3px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        #debugPanel hr {
+            border: none;
+            border-top: 1px dashed #0a0;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
 
 <div id="info">Score: 0</div>
+
+<div id="debugPanel">
+    <h4>Debug Panel (Toggle with `)</h4>
+    <div>Score: <span id="debugScore">0</span></div>
+    <div>Drops: <span id="debugDrops">0</span></div>
+    <div>Particles: <span id="debugParticles">0</span></div>
+    <div>Catcher Size: <span id="debugSize">1.000</span></div>
+    <div>Smoothing: <span id="debugSmoothing">0.180</span></div>
+    <hr>
+    <div>
+        <label for="inputSpawn">Spawn Interval (ms):</label>
+        <input type="number" id="inputSpawn" step="50" min="50">
+    </div>
+    <div>
+        <label for="inputMaxDrops">Max Drops:</label>
+        <input type="number" id="inputMaxDrops" step="1" min="1">
+    </div>
+    <div>
+        <label for="inputGrowth">Growth Rate:</label>
+        <input type="number" id="inputGrowth" step="0.001" min="0" max="0.1">
+    </div>
+    <div>
+        <label for="inputSmoothing">Initial Smoothing:</label>
+        <input type="number" id="inputSmoothing" step="0.01" min="0.01" max="0.5">
+    </div>
+    <div>
+        <label for="inputMinSmoothing">Min Smoothing:</label>
+        <input type="number" id="inputMinSmoothing" step="0.005" min="0.01" max="0.2">
+    </div>
+    <div>
+        <label for="inputMaxMult">Max Size Multi:</label>
+        <input type="number" id="inputMaxMult" step="0.1" min="1" max="10">
+    </div>
+    <hr>
+    <div><em>Game Time:</em> <span id="debugGameTime">0</span>ms</div>
+</div>
+
 <canvas id="gameCanvas"></canvas>
 
 <script>
+    // --- Standard Canvas & Score Setup ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const scoreDisplay = document.getElementById('info');
 
+    // --- Debug Panel Elements ---
+    const debugPanelElement = document.getElementById('debugPanel');
+    const debugScoreElement = document.getElementById('debugScore');
+    const debugDropsElement = document.getElementById('debugDrops');
+    const debugParticlesElement = document.getElementById('debugParticles');
+    const debugSizeElement = document.getElementById('debugSize');
+    const debugSmoothingElement = document.getElementById('debugSmoothing');
+    const debugGameTimeElement = document.getElementById('debugGameTime'); // Added Game Time display
+
+    const inputSpawnElement = document.getElementById('inputSpawn');
+    const inputMaxDropsElement = document.getElementById('inputMaxDrops');
+    const inputGrowthElement = document.getElementById('inputGrowth');
+    const inputSmoothingElement = document.getElementById('inputSmoothing');
+    const inputMinSmoothingElement = document.getElementById('inputMinSmoothing');
+    const inputMaxMultElement = document.getElementById('inputMaxMult');
+
     // --- Screen and Resize Handling ---
     let SCREEN_WIDTH = window.innerWidth;
     let SCREEN_HEIGHT = window.innerHeight;
-    canvas.width = SCREEN_WIDTH; // Set initial render size
+    canvas.width = SCREEN_WIDTH;
     canvas.height = SCREEN_HEIGHT;
 
     function handleResize() {
@@ -52,61 +161,52 @@
         SCREEN_HEIGHT = window.innerHeight;
         canvas.width = SCREEN_WIDTH;
         canvas.height = SCREEN_HEIGHT;
-
-        // Re-initialize elements dependent on screen size
-        initializeStars(); // Regenerate stars for new size
-
-        // Clamp catcher position to new bounds
+        initializeStars();
         catcherX = Math.max(0, Math.min(SCREEN_WIDTH, catcherX));
         catcherY = Math.max(0, Math.min(SCREEN_HEIGHT, catcherY));
         mouseX = catcherX;
         mouseY = catcherY;
-
-        console.log(`Resized to ${SCREEN_WIDTH}x${SCREEN_HEIGHT}`);
+        console.log(`Resized to <span class="math-inline">\{SCREEN\_WIDTH\}x</span>{SCREEN_HEIGHT}`);
     }
     window.addEventListener('resize', handleResize);
 
+    // --- Game Constants & Tunable Variables (using let) ---
+    let GLOWDROP_RADIUS = 14;
+    let GLOWDROP_SPEED_MIN = 1.2;
+    let GLOWDROP_SPEED_MAX = 3.5;
+    let GLOWDROP_SPAWN_INTERVAL = 800; // ms
+    let MAX_GLOWDROPS = 25;
+    // const BACKGROUND_COLOR = "#2a2a5a"; // Defined in CSS
 
-    // --- Game Constants & Initial Values ---
-    const GLOWDROP_RADIUS = 14;
-    const GLOWDROP_SPEED_MIN = 1.2;
-    const GLOWDROP_SPEED_MAX = 3.5;
-    const GLOWDROP_SPAWN_INTERVAL = 800;
-    const MAX_GLOWDROPS = 25;
-    const BACKGROUND_COLOR = "#2a2a5a"; // Set via CSS now, but can use for clearRect if needed
-
-    const COLORS = { /* Using slightly softer/cuter colors */
-        "pink": "rgb(255, 150, 200)",
-        "sky": "rgb(135, 206, 250)",
-        "mint": "rgb(150, 255, 180)",
-        "lavender": "rgb(200, 160, 255)",
-        "peach": "rgb(255, 200, 150)",
-        "lemon": "rgb(255, 250, 150)",
+    const COLORS = { /* Colors remain const */
+        "pink": "rgb(255, 150, 200)", "sky": "rgb(135, 206, 250)",
+        "mint": "rgb(150, 255, 180)", "lavender": "rgb(200, 160, 255)",
+        "peach": "rgb(255, 200, 150)", "lemon": "rgb(255, 250, 150)",
     };
     const COLOR_NAMES = Object.keys(COLORS);
 
-    // --- Catcher & Trail ---
-    const INITIAL_CATCHER_RADIUS = 20;
-    const INITIAL_TRAIL_WIDTH = INITIAL_CATCHER_RADIUS * 1.8;
+    // --- Catcher & Trail (using let for tunable vars) ---
+    let INITIAL_CATCHER_RADIUS = 20; // Note: This is now just the base radius value
+    let INITIAL_TRAIL_WIDTH = INITIAL_CATCHER_RADIUS * 1.8; // Base width also scales with base radius
     const TRAIL_LENGTH = 35;
-    const INITIAL_SMOOTHING = 0.18; // Start slightly slower
-    const MIN_SMOOTHING = 0.04; // Minimum responsiveness
-    const GROWTH_RATE = 0.018; // How much multiplier increases per catch
-    const MAX_CATCHER_MULTIPLIER = 3.5; // Max size increase
+    let INITIAL_SMOOTHING = 0.18;
+    let MIN_SMOOTHING = 0.04;
+    let GROWTH_RATE = 0.018;
+    let MAX_CATCHER_MULTIPLIER = 3.5;
 
-    // --- Particles ---
-    const PARTICLE_COUNT_FIREWORK = 30; // More particles for fireworks
+    // --- Particles (const is fine here) ---
+    const PARTICLE_COUNT_FIREWORK = 30;
     const PARTICLE_SPEED_FIREWORK = 4.5;
     const PARTICLE_LIFE_FIREWORK = 65;
 
-    // --- Game Variables ---
+    // --- Game State Variables ---
     let score = 0;
     let mouseX = SCREEN_WIDTH / 2;
     let mouseY = SCREEN_HEIGHT - INITIAL_CATCHER_RADIUS * 3;
     let catcherX = mouseX;
     let catcherY = mouseY;
-    let catcherSizeMultiplier = 1.0; // Starts at normal size
-    let currentSmoothing = INITIAL_SMOOTHING; // For catcher movement responsiveness
+    let catcherSizeMultiplier = 1.0;
+    let currentSmoothing = INITIAL_SMOOTHING;
     let trailPoints = [];
     let glowdrops = [];
     let particles = [];
@@ -114,57 +214,106 @@
     let lastSpawnTime = 0;
     let gameTime = 0;
 
-    // --- Setup ---
+    // --- Setup Functions (initializeStars, createGlowdrop, createFireworks, lerp - unchanged) ---
     function initializeStars() {
         stars = [];
-        const starCount = Math.floor((SCREEN_WIDTH * SCREEN_HEIGHT) / 8000); // Adjust density based on area
+        const starCount = Math.floor((SCREEN_WIDTH * SCREEN_HEIGHT) / 8000);
         for (let i = 0; i < starCount; i++) {
             stars.push({
-                x: Math.random() * SCREEN_WIDTH,
-                y: Math.random() * SCREEN_HEIGHT,
-                radius: Math.random() * 1.5 + 0.5,
-                alpha: Math.random() * 0.5 + 0.3
+                x: Math.random() * SCREEN_WIDTH, y: Math.random() * SCREEN_HEIGHT,
+                radius: Math.random() * 1.5 + 0.5, alpha: Math.random() * 0.5 + 0.3
             });
         }
     }
-
-    function createGlowdrop() {
+    function createGlowdrop() { /* ... same as before ... */
         const colorName = COLOR_NAMES[Math.floor(Math.random() * COLOR_NAMES.length)];
         return {
             id: Date.now() + Math.random(),
             x: Math.random() * (SCREEN_WIDTH - GLOWDROP_RADIUS * 2) + GLOWDROP_RADIUS,
             y: -GLOWDROP_RADIUS * 2,
             radius: GLOWDROP_RADIUS * (Math.random() * 0.2 + 0.9),
-            colorName: colorName,
-            colorRgb: COLORS[colorName],
+            colorName: colorName, colorRgb: COLORS[colorName],
             speed: Math.random() * (GLOWDROP_SPEED_MAX - GLOWDROP_SPEED_MIN) + GLOWDROP_SPEED_MIN,
-            rotation: Math.random() * Math.PI * 2,
-            rotationSpeed: (Math.random() - 0.5) * 0.04
+            rotation: Math.random() * Math.PI * 2, rotationSpeed: (Math.random() - 0.5) * 0.04
         };
     }
-
-    function createFireworks(x, y, baseColor) {
+    function createFireworks(x, y, baseColor) { /* ... same as before ... */
         const hue = Math.random() * 360;
         for (let i = 0; i < PARTICLE_COUNT_FIREWORK; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * PARTICLE_SPEED_FIREWORK + 1;
             const life = PARTICLE_LIFE_FIREWORK * (Math.random() * 0.5 + 0.5);
             const particleColor = `hsl(${hue + (Math.random() - 0.5) * 60}, 100%, ${Math.random() * 30 + 60}%)`;
-
             particles.push({
-                x: x, y: y,
-                vx: Math.cos(angle) * speed * (Math.random() * 0.5 + 0.5),
-                vy: Math.sin(angle) * speed * (Math.random() * 0.5 + 0.5) - 0.5,
-                life: life, maxLife: life, color: particleColor,
-                radius: Math.random() * 3 + 2,
-                gravity: 0.04, // Slightly stronger gravity
-                fades: true
+                x: x, y: y, vx: Math.cos(angle) * speed * (Math.random()*0.5+0.5), vy: Math.sin(angle) * speed * (Math.random()*0.5+0.5) - 0.5,
+                life: life, maxLife: life, color: particleColor, radius: Math.random() * 3 + 2, gravity: 0.04, fades: true
             });
         }
     }
+    function lerp(start, end, amount) { return start + (end - start) * amount; }
 
-    function lerp(start, end, amount) {
-        return start + (end - start) * amount;
+
+    // --- Debug Panel Functions ---
+    function toggleDebugPanel(event) {
+        if (event.key === '`') { // Backtick key
+            event.preventDefault(); // Prevent typing the backtick if used in a text field
+            const isHidden = debugPanelElement.style.display === 'none';
+            debugPanelElement.style.display = isHidden ? 'block' : 'none';
+        }
+    }
+
+    function updateDebugPanel() {
+        // Only update if visible for performance
+        if (debugPanelElement.style.display !== 'none') {
+            debugScoreElement.textContent = score;
+            debugDropsElement.textContent = glowdrops.length;
+            debugParticlesElement.textContent = particles.length;
+            debugSizeElement.textContent = catcherSizeMultiplier.toFixed(3);
+            debugSmoothingElement.textContent = currentSmoothing.toFixed(3);
+            debugGameTimeElement.textContent = Math.floor(gameTime);
+        }
+    }
+
+    function setupDebugInputs() {
+        // Set initial input values from game vars
+        inputSpawnElement.value = GLOWDROP_SPAWN_INTERVAL;
+        inputMaxDropsElement.value = MAX_GLOWDROPS;
+        inputGrowthElement.value = GROWTH_RATE;
+        inputSmoothingElement.value = INITIAL_SMOOTHING;
+        inputMinSmoothingElement.value = MIN_SMOOTHING;
+        inputMaxMultElement.value = MAX_CATCHER_MULTIPLIER;
+
+        // Add listeners to update game vars when inputs change
+        inputSpawnElement.addEventListener('change', (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 50) GLOWDROP_SPAWN_INTERVAL = val;
+            e.target.value = GLOWDROP_SPAWN_INTERVAL; // Update input in case value was invalid/clamped
+        });
+        inputMaxDropsElement.addEventListener('change', (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 1) MAX_GLOWDROPS = val;
+            e.target.value = MAX_GLOWDROPS;
+        });
+        inputGrowthElement.addEventListener('change', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val) && val >= 0) GROWTH_RATE = val;
+            e.target.value = GROWTH_RATE.toFixed(3);
+        });
+        inputSmoothingElement.addEventListener('change', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val) && val >= 0.01 && val <= 0.5) INITIAL_SMOOTHING = val;
+            e.target.value = INITIAL_SMOOTHING.toFixed(2);
+        });
+        inputMinSmoothingElement.addEventListener('change', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val) && val >= 0.01 && val <= 0.2) MIN_SMOOTHING = val;
+            e.target.value = MIN_SMOOTHING.toFixed(3);
+        });
+        inputMaxMultElement.addEventListener('change', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val) && val >= 1.0) MAX_CATCHER_MULTIPLIER = val;
+            e.target.value = MAX_CATCHER_MULTIPLIER.toFixed(1);
+        });
     }
 
     // --- Game Loop ---
@@ -172,24 +321,22 @@
         gameTime = currentTime;
         update(currentTime);
         draw();
+        updateDebugPanel(); // Update debug panel values
         requestAnimationFrame(gameLoop);
     }
 
     // --- Update Function ---
     function update(currentTime) {
         // Calculate current smoothing based on size
-        // Make slowdown more pronounced as size increases
         currentSmoothing = Math.max(MIN_SMOOTHING, INITIAL_SMOOTHING / (1 + (catcherSizeMultiplier - 1) * 0.7));
 
-        // Smoothly move catcher towards mouse position
+        // Move catcher
         catcherX = lerp(catcherX, mouseX, currentSmoothing);
         catcherY = lerp(catcherY, mouseY, currentSmoothing);
 
-        // Add current catcher position to the trail
+        // Update trail
         trailPoints.push({ x: catcherX, y: catcherY, time: currentTime });
-        while (trailPoints.length > TRAIL_LENGTH) {
-            trailPoints.shift();
-        }
+        while (trailPoints.length > TRAIL_LENGTH) { trailPoints.shift(); }
 
         // --- Glowdrop Logic ---
         // Spawn
@@ -199,34 +346,34 @@
         }
 
         // Move and check collision
-        const currentTrailEffectiveWidth = INITIAL_TRAIL_WIDTH * catcherSizeMultiplier; // Width used for collision
+        const currentTrailEffectiveWidth = (INITIAL_CATCHER_RADIUS * 1.8) * catcherSizeMultiplier; // Use base width related to base radius
 
         for (let i = glowdrops.length - 1; i >= 0; i--) {
             const drop = glowdrops[i];
             drop.y += drop.speed;
             drop.rotation += drop.rotationSpeed;
 
-            // Collision Check against Trail
             let caught = false;
-            for (let j = 0; j < trailPoints.length - 1; j++) {
+            // Simplified Collision Check: Distance to trail points
+            for (let j = trailPoints.length - 1; j >= 0; j--) { // Check newer points first maybe?
                 const p1 = trailPoints[j];
-                // Simple check: distance from drop center to trail point
                 const dx = drop.x - p1.x;
                 const dy = drop.y - p1.y;
                 const distSq = dx * dx + dy * dy;
-                const catchRadius = (currentTrailEffectiveWidth / 2) + drop.radius; // Combine radii
+                const catchRadius = (currentTrailEffectiveWidth / 2) + drop.radius;
                 const catchRadiusSq = catchRadius * catchRadius;
 
                 if (distSq < catchRadiusSq) {
                     // --- CATCH ---
                     score += 10;
                     catcherSizeMultiplier = Math.min(MAX_CATCHER_MULTIPLIER, catcherSizeMultiplier + GROWTH_RATE); // Get fatter!
-                    console.log(`Caught ${drop.colorName}! Size: ${catcherSizeMultiplier.toFixed(2)}, Smoothing: ${currentSmoothing.toFixed(3)}`);
                     createFireworks(drop.x, drop.y, drop.colorRgb);
                     glowdrops.splice(i, 1);
                     caught = true;
-                    break; // Drop caught, move to next drop
+                    break;
                 }
+                // Optimization: If drop is way below the trail point, stop checking older points for this drop
+                if (drop.y < p1.y - catchRadius*2) break;
             }
 
             // Remove if off-screen
@@ -238,8 +385,7 @@
         // Update particles
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
-            p.x += p.vx;
-            p.y += p.vy;
+            p.x += p.vx; p.y += p.vy;
             if (p.gravity) { p.vy += p.gravity; }
             p.life -= 1;
             if (p.life <= 0) { particles.splice(i, 1); }
@@ -248,113 +394,76 @@
 
     // --- Draw Function ---
     function draw() {
-        // Clear canvas (or draw background)
-        ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT); // Clear since bg color is on canvas style
+        // Clear canvas
+        ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        // Draw stars
-        stars.forEach(star => {
+        // Draw stars (unchanged)
+        stars.forEach(star => { /* ... */
             ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha * (Math.sin(gameTime * 0.0005 + star.x * 0.1) * 0.2 + 0.8)})`;
-            ctx.beginPath();
-            ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2); ctx.fill();
         });
 
-        // --- Draw Trail ---
-        const baseTrailVisualWidth = INITIAL_TRAIL_WIDTH * catcherSizeMultiplier; // Visual width scales
+        // --- Draw Trail --- (Using scaled base width)
+        const baseTrailVisualWidth = (INITIAL_CATCHER_RADIUS * 1.8) * catcherSizeMultiplier;
         if (trailPoints.length > 1) {
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
             for (let i = 0; i < trailPoints.length - 1; i++) {
-                const p1 = trailPoints[i];
-                const p2 = trailPoints[i + 1];
+                const p1 = trailPoints[i]; const p2 = trailPoints[i + 1];
                 const ratio = i / TRAIL_LENGTH;
-                const currentVisualWidth = baseTrailVisualWidth * (0.4 + ratio * 0.6); // Taper width visually
+                const currentVisualWidth = baseTrailVisualWidth * (0.4 + ratio * 0.6);
                 ctx.lineWidth = currentVisualWidth;
                 const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
                 gradient.addColorStop(0, `rgba(255, 255, 255, ${ratio * 0.4})`);
                 gradient.addColorStop(1, `rgba(255, 255, 255, ${ratio * 0.6 + 0.1})`);
                 ctx.strokeStyle = gradient;
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
             }
         }
 
-        // --- Draw Catcher ---
-        const currentCatcherRadius = INITIAL_CATCHER_RADIUS * catcherSizeMultiplier;
-        const catcherPulse = Math.sin(gameTime * 0.01) * 0.08 + 0.92; // Slightly smaller pulse
-        const displayRadius = currentCatcherRadius * catcherPulse;
-        const catcherGradient = ctx.createRadialGradient(catcherX, catcherY, 0, catcherX, catcherY, displayRadius);
+        // --- Draw Catcher --- (Using scaled base radius)
+        const currentCatcherDisplayRadius = (INITIAL_CATCHER_RADIUS * catcherSizeMultiplier) * (Math.sin(gameTime * 0.01) * 0.08 + 0.92);
+        const catcherGradient = ctx.createRadialGradient(catcherX, catcherY, 0, catcherX, catcherY, currentCatcherDisplayRadius);
+        /* ... gradient stops unchanged ... */
         catcherGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
         catcherGradient.addColorStop(0.5, 'rgba(200, 220, 255, 0.9)');
         catcherGradient.addColorStop(1, 'rgba(150, 200, 255, 0)');
         ctx.fillStyle = catcherGradient;
         ctx.shadowColor = 'rgba(200, 220, 255, 0.8)';
-        ctx.shadowBlur = displayRadius * 0.8; // Adjust shadow with size
+        ctx.shadowBlur = currentCatcherDisplayRadius * 0.8;
         ctx.beginPath();
-        ctx.arc(catcherX, catcherY, displayRadius, 0, Math.PI * 2);
+        ctx.arc(catcherX, catcherY, currentCatcherDisplayRadius, 0, Math.PI * 2);
         ctx.fill();
-        // Star points
-        const numPoints = 5 + Math.floor(catcherSizeMultiplier - 1); // More points when bigger
+        // Star points (unchanged logic, uses current radius)
+        const numPoints = 5 + Math.floor(catcherSizeMultiplier - 1);
         for (let i = 0; i < numPoints; i++) {
             const angle = (i / numPoints) * Math.PI * 2 + gameTime * 0.002;
-            const len = displayRadius * (1.2 + Math.sin(gameTime*0.015 + i)*0.1); // Pulsing length points
-            ctx.lineWidth = Math.max(1, 2 * catcherSizeMultiplier * 0.7); // Scale line width, min 1
+            const len = currentCatcherDisplayRadius * (1.2 + Math.sin(gameTime*0.015 + i)*0.1);
+            ctx.lineWidth = Math.max(1, 2 * catcherSizeMultiplier * 0.7);
             ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + Math.sin(gameTime*0.01 + i*1.5)*0.3})`;
-            ctx.beginPath();
-            ctx.moveTo(catcherX, catcherY);
-            ctx.lineTo(catcherX + Math.cos(angle) * len, catcherY + Math.sin(angle) * len);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(catcherX, catcherY); ctx.lineTo(catcherX + Math.cos(angle) * len, catcherY + Math.sin(angle) * len); ctx.stroke();
         }
         ctx.shadowBlur = 0;
 
 
-        // Draw Glowdrops
-        glowdrops.forEach(drop => {
-            ctx.save();
-            ctx.translate(drop.x, drop.y);
-            ctx.rotate(drop.rotation);
-            const radius = drop.radius;
-            const gradient = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius);
-            const baseColor = drop.colorRgb;
-            const match = baseColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-            if (match) { /* ... gradient code unchanged ... */
-                const [_, r, g, b] = match;
-                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1)`);
-                gradient.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, 0.9)`);
-                gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.5)`);
-            } else { gradient.addColorStop(0, baseColor); gradient.addColorStop(1, baseColor); }
-            ctx.beginPath();
-            ctx.arc(0, 0, radius, 0, Math.PI * 2);
-            ctx.fillStyle = gradient;
-            ctx.shadowColor = drop.colorRgb;
-            ctx.shadowBlur = 8; // Slightly smaller blur
-            ctx.fill();
-            ctx.restore();
+        // Draw Glowdrops (unchanged)
+        glowdrops.forEach(drop => { /* ... */
+            ctx.save(); ctx.translate(drop.x, drop.y); ctx.rotate(drop.rotation);
+            const radius = drop.radius; const gradient = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius);
+            const baseColor = drop.colorRgb; const match = baseColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+            if(match){ const[_,r,g,b]=match; gradient.addColorStop(0,`rgba(${r},${g},${b},1)`); gradient.addColorStop(0.7,`rgba(${r},${g},${b},0.9)`); gradient.addColorStop(1,`rgba(${r},${g},${b},0.5)`);}else{gradient.addColorStop(0,baseColor); gradient.addColorStop(1,baseColor);}
+            ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fillStyle = gradient; ctx.shadowColor = drop.colorRgb; ctx.shadowBlur = 8; ctx.fill(); ctx.restore();
         });
         ctx.shadowBlur = 0;
 
-        // Draw Particles (Fireworks)
-        particles.forEach(p => { /* ... particle drawing unchanged ... */
-            const alpha = p.life / p.maxLife;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius * alpha, 0, Math.PI * 2);
-            if (p.color.startsWith('hsl')) {
-                // Correct HSL fading: fade lightness or saturation AND alpha
-                const match = p.color.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);
-                if (match) {
-                    const [_, h, s, l] = match;
-                    // Fade lightness towards middle gray and fade alpha
-                    const fadedL = parseFloat(l) * alpha + 50 * (1 - alpha);
-                    ctx.fillStyle = `hsla(${h}, ${s}%, ${fadedL}%, ${alpha})`;
-                } else { ctx.fillStyle = p.color;} // Fallback
 
-            } else { // RGB fallback
-                const match = p.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-                if (match) { ctx.fillStyle = `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${p.fades ? alpha : 1})`; }
-                else { ctx.fillStyle = p.color; }
-            }
+        // Draw Particles (Fireworks - updated HSL fading)
+        particles.forEach(p => { /* ... */
+            const alpha = p.life / p.maxLife;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * alpha, 0, Math.PI * 2);
+            if (p.color.startsWith('hsl')) {
+                const match = p.color.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);
+                if (match) { const [_, h, s, l] = match; const fadedL = parseFloat(l) * alpha + 50 * (1-alpha); ctx.fillStyle = `hsla(${h}, ${s}%, ${fadedL}%, ${alpha})`;} else { ctx.fillStyle = p.color;}
+            } else { const match = p.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/); if(match){ ctx.fillStyle = `rgba(${match[1]},${match[2]},${match[3]},${p.fades?alpha:1})`;} else { ctx.fillStyle = p.color; }}
             ctx.fill();
         });
 
@@ -364,18 +473,16 @@
 
     // --- Event Listeners ---
     canvas.addEventListener('mousemove', function(event) {
-        // No clientRect needed if canvas covers whole window and has no border/padding affecting coords
         mouseX = event.clientX;
         mouseY = event.clientY;
     });
-
-    canvas.addEventListener('mouseleave', function(event) {
-        // Keep following towards the last known mouse position
-    });
+    // No mouseleave listener currently needed
 
     // --- Start ---
-    initializeStars();
-    requestAnimationFrame(gameLoop); // Start the loop!
+    window.addEventListener('keydown', toggleDebugPanel); // Listener for debug toggle
+    setupDebugInputs(); // Initialize debug inputs and listeners
+    initializeStars(); // Initial star setup
+    requestAnimationFrame(gameLoop); // Start the main loop
 
 </script>
 
