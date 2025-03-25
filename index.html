@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js HTTP Monitor</title>
+    <title>Three.js Matrix Monitor</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="monitor-ui">
-    <h2>Add Endpoint to Monitor</h2>
-    <label for="endpoint-url">URL (incl. http/https):</label>
-    <input type="text" id="endpoint-url" placeholder="https://example.com">
-    <label for="endpoint-port">Port:</label>
+    <h2>Add Endpoint</h2>
+    <label for="endpoint-domain">Domain Name (e.g., google.com):</label>
+    <input type="text" id="endpoint-domain" placeholder="example.com">
+    <label for="endpoint-port">Port (optional, default 443):</label>
     <input type="number" id="endpoint-port" placeholder="443">
     <button id="add-endpoint-btn">Add Endpoint</button>
     <p class="warning">
-        <strong>Note:</strong> This visualization requires the Go proxy script
-        (<code>proxy.go</code>) to be running locally (usually on port 8080).
-        The proxy performs the actual checks, bypassing browser CORS limits for target sites.
-        Ensure the proxy is started before adding endpoints.
+        <strong>Note:</strong> Go proxy (<code>proxy.go</code>) must be running.
+        Click cubes to toggle details. Use mouse to orbit/zoom.
     </p>
 </div>
 
@@ -32,6 +30,11 @@
             "three/addons/": "https://unpkg.com/three@0.163.0/examples/jsm/"
         }
     }
+</script>
+<script type="module">
+    // Optional global assignment for debugging (Remains the same)
+    import * as THREE from 'three';
+    window.THREE = THREE;
 </script>
 <script type="module" src="main.js"></script>
 </body>

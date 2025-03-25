@@ -1,76 +1,116 @@
+/* Basic page setup */
 body {
     margin: 0;
-    overflow: hidden;
-    background-color: #000;
-    color: #00ff00;
-    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden; /* Prevent scrollbars on the body */
+    background-color: #000; /* Black background */
+    color: #00ff00; /* Default text color (green) */
+    /* Prioritize Matrix-like fonts */
+    font-family: 'Lucida Console', 'Monaco', 'Courier New', Courier, monospace;
 }
 
+/* Container for the main WebGL canvas */
 #webgl-container {
-    position: fixed; /* Changed from absolute to fixed */
+    position: fixed; /* Fix position to cover viewport */
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1; /* WebGL behind labels but above background */
+    z-index: 1; /* Place WebGL canvas below labels but above body background */
 }
 
+/* Styling for the WebGL canvas itself (for cursor) */
+#webgl-container canvas {
+    display: block; /* Prevent potential extra space below canvas */
+    cursor: grab; /* Indicate interactivity */
+}
+#webgl-container canvas:active {
+    cursor: grabbing; /* Indicate dragging */
+}
+
+/* Container for the CSS2D HTML labels (both main and detail) */
 #css2d-labels {
-    position: fixed; /* Use fixed positioning like the canvas */
+    position: fixed; /* Fix position to cover viewport */
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 2; /* Labels on top of WebGL */
-    pointer-events: none; /* Allow clicks/interactions to pass through to WebGL canvas */
-    overflow: hidden; /* Prevent potential scrollbars if labels go off-screen */
-    color: #fff; /* Default label color */
+    z-index: 2; /* Place labels on top of the WebGL canvas */
+    pointer-events: none; /* VERY IMPORTANT: Allows mouse events (drag, scroll, click) to pass through to the underlying canvas for OrbitControls and Raycaster */
+    overflow: hidden; /* Hide anything extending beyond the viewport */
+    color: #fff; /* Default label text color (if not overridden) */
 }
 
-/* Individual label styling */
+/* Styling for individual endpoint labels (the small ones attached to cubes) */
 .endpoint-label {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 10px;
-    color: #ffffff; /* Default */
-    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
-    padding: 2px 5px;
-    border-radius: 3px;
-    white-space: nowrap; /* Prevent wrapping */
-    /* pointer-events: auto; */ /* Uncomment if you want labels to be interactive */
+    font-family: inherit; /* Use body font */
+    font-size: 10px;    /* Small font size */
+    color: #ffffff;     /* Default text color (white for contrast on dark background) */
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
+    padding: 2px 5px;   /* Small padding */
+    border-radius: 3px; /* Slightly rounded corners */
+    white-space: nowrap;/* Prevent label text from wrapping */
+    text-shadow: 0 0 3px #00ff00; /* Add subtle green text glow */
+    /* Inherits pointer-events: none, no interaction needed for these */
 }
 
-/* Status-specific label colors (optional) */
-.endpoint-label.status-ok {
-    color: #00ff00;
-    /* border: 1px solid #00ff00; */
-}
-.endpoint-label.status-error {
-    color: #ff0000;
-    /* border: 1px solid #ff0000; */
-}
-.endpoint-label.status-timeout {
-    color: #ffa500;
-    /* border: 1px solid #ffa500; */
-}
-.endpoint-label.status-pending {
-    color: #ffff00;
-}
+/* Status-specific colors for the small endpoint labels */
+.endpoint-label.status-ok { color: #00FF00; } /* Bright Green */
+.endpoint-label.status-error { color: #FF4444; } /* Brighter Red for visibility */
+.endpoint-label.status-timeout { color: #FFFF66; } /* Yellowish for Timeout */
+.endpoint-label.status-pending { color: #99FF99; } /* Pale Green for Pending */
 .endpoint-label.status-proxy_error,
-.endpoint-label.status-invalid_request {
-    color: #aaaaaa; /* Grey for proxy/setup issues */
+.endpoint-label.status-invalid_request { color: #AAAAAA; } /* Grey */
+
+/* Styling for the Click Detail Panel (the larger info box) */
+.detail-panel {
+    font-family: inherit; /* Use body font */
+    font-size: 11px;        /* Slightly larger font */
+    color: #00ff00;         /* Green text */
+    background-color: rgba(0, 20, 0, 0.9); /* Darker, more opaque background */
+    border: 1px solid #00cc00; /* Slightly darker green border */
+    padding: 8px 12px;      /* Padding inside the panel */
+    border-radius: 4px;     /* Rounded corners */
+    width: 220px;           /* Fixed width */
+    pointer-events: auto;   /* Allow text selection if needed, though it visually floats */
+    text-shadow: 0 0 4px #00ff00; /* Green text glow */
+    line-height: 1.5;       /* Spacing between lines */
+    /* Starts hidden via JS (display: none) */
 }
 
+/* Styling within the detail panel */
+.detail-panel strong {
+    color: #ffffff; /* White for field names (Target, Status, etc.) */
+    margin-right: 5px; /* Space after the field name */
+    display: inline-block; /* Ensure proper layout */
+    min-width: 60px;      /* Align values slightly */
+}
 
+.detail-panel span {
+    color: #99ff99; /* Lighter green for the actual values */
+}
+
+/* Specific styling for the status value within the detail panel */
+.detail-panel .status-ok { color: #00FF00; font-weight: bold; }
+.detail-panel .status-error { color: #FF4444; font-weight: bold; }
+.detail-panel .status-timeout { color: #FFFF66; font-weight: bold; }
+.detail-panel .status-pending { color: #99FF99; font-weight: bold; }
+.detail-panel .status-proxy_error,
+.detail-panel .status-invalid_request { color: #AAAAAA; font-weight: bold; }
+
+
+/* Styling for the top-left UI control panel */
 #monitor-ui {
-    position: fixed; /* Keep UI fixed */
+    position: fixed; /* Keep UI fixed in the top-left corner */
     top: 10px;
     left: 10px;
-    background-color: rgba(0, 20, 0, 0.8);
-    border: 1px solid #00ff00;
+    background-color: rgba(0, 20, 0, 0.85); /* Dark green, mostly opaque background */
+    border: 1px solid #00ff00; /* Green border */
     padding: 15px;
     border-radius: 5px;
-    z-index: 10; /* UI always on top */
-    max-width: 300px;
+    z-index: 10; /* Ensure UI is on top of everything else */
+    max-width: 300px; /* Limit width */
+    color: #00ff00; /* UI text color */
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); /* Add subtle green glow to UI */
 }
 
 #monitor-ui h2 {
@@ -78,44 +118,64 @@ body {
     font-size: 1.2em;
     border-bottom: 1px solid #00ff00;
     padding-bottom: 5px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px #00ff00; /* Glow for header */
 }
 
 #monitor-ui label {
-    display: block;
+    display: block; /* Make labels take full width */
     margin-top: 10px;
     font-size: 0.9em;
 }
 
-#monitor-ui input {
-    width: calc(100% - 12px); /* Adjust for padding */
-    background-color: #001100;
-    border: 1px solid #00ff00;
-    color: #00ff00;
+#monitor-ui input[type="text"],
+#monitor-ui input[type="number"] {
+    width: calc(100% - 12px); /* Full width minus padding */
+    background-color: #001100; /* Very dark green background */
+    border: 1px solid #00ff00; /* Green border */
+    color: #00ff00; /* Green text */
     padding: 5px;
     margin-top: 3px;
-    font-family: inherit;
+    font-family: inherit; /* Use the same monospaced font */
+    border-radius: 2px;
 }
+
+/* Remove spinners from number input (optional aesthetics) */
+#monitor-ui input[type=number]::-webkit-inner-spin-button,
+#monitor-ui input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#monitor-ui input[type=number] {
+    -moz-appearance: textfield; /* Firefox */
+}
+
 
 #monitor-ui button {
     margin-top: 15px;
-    background-color: #003300;
+    background-color: #003300; /* Darker green button */
     border: 1px solid #00ff00;
     color: #00ff00;
     padding: 8px 15px;
     cursor: pointer;
     font-family: inherit;
-    transition: background-color 0.3s, color 0.3s;
+    border-radius: 3px;
+    transition: background-color 0.3s, color 0.3s; /* Smooth hover effect */
+    text-shadow: 0 0 3px #00ff00; /* Subtle glow */
 }
 
 #monitor-ui button:hover {
-    background-color: #00ff00;
-    color: #000;
+    background-color: #00ff00; /* Bright green background on hover */
+    color: #000; /* Black text on hover */
+    text-shadow: none; /* Remove glow on hover */
 }
 
+/* Warning message styling */
 .warning {
     margin-top: 15px;
     font-size: 0.8em;
     color: #ffcc00; /* Yellowish warning color */
-    border-top: 1px dashed #555;
+    border-top: 1px dashed #555; /* Dashed line separator */
     padding-top: 10px;
+    line-height: 1.3;
 }

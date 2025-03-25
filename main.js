@@ -1,316 +1,384 @@
 import * as THREE from 'three';
-// Import CSS2DRenderer and CSS2DObject
+// Addons
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+// Post-processing
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-// --- Config ---
-const MATRIX_DROP_COUNT = 300;
-const MATRIX_SPEED_MIN = 0.05;
-const MATRIX_SPEED_MAX = 0.15;
+// --- Configuration ---
+const MATRIX_DROP_COUNT = 500;
+const MATRIX_SPEED_MIN = 0.04;
+const MATRIX_SPEED_MAX = 0.12;
 const CHECK_INTERVAL_MS = 10000;
 const PROXY_URL = 'http://localhost:8080/check';
 
-// --- Status Colors ---
-const PENDING_COLOR = 0xffff00;
-const OK_COLOR = 0x00ff00;
-const ERROR_COLOR = 0xff0000;
-const TIMEOUT_COLOR = 0xffa500;
-const PROXY_ERROR_COLOR = 0x808080;
+// --- Status Colors (Matrix Theme) ---
+const PENDING_COLOR = 0x33FF33;     // Light Green
+const OK_COLOR = 0x00FF00;          // Bright Green
+const ERROR_COLOR = 0xAA0000;       // Dark/Desaturated Red
+const TIMEOUT_COLOR = 0x99FF99;     // Pale Green
+const PROXY_ERROR_COLOR = 0x555555; // Dark Grey
 
 // --- Globals ---
-let scene, camera, renderer, css2DRenderer; // Added css2DRenderer
+let scene, camera, renderer, css2DRenderer, controls, composer;
 let matrixDrops = [];
-let monitoredEndpoints = []; // { ..., mesh, labelObject, ... }
+let monitoredEndpoints = [];
 let nextEndpointId = 0;
-const endpointGrid = { cols: 5, spacing: 3 }; // Increased spacing slightly for labels
+const endpointGrid = { cols: 6, spacing: 3.5 };
+
+// Interaction Globals
+let raycaster;
+const mouse = new THREE.Vector2();
+let selectedEndpointData = null;
+let detailLabelObject = null;
 
 // --- Initialization ---
 function init() {
-    // Scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
+    scene.fog = new THREE.FogExp2(0x000000, 0.03);
 
-    // Camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 15;
-    camera.position.y = 5;
-    camera.lookAt(0, 0, 0);
+    camera.position.set(0, 6, 18);
 
-    // WebGL Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
     document.getElementById('webgl-container').appendChild(renderer.domElement);
 
-    // CSS2D Renderer for Labels
     css2DRenderer = new CSS2DRenderer();
     css2DRenderer.setSize(window.innerWidth, window.innerHeight);
     css2DRenderer.domElement.style.position = 'absolute';
     css2DRenderer.domElement.style.top = '0px';
-    document.getElementById('css2d-labels').appendChild(css2DRenderer.domElement); // Append to the new container
+    css2DRenderer.domElement.style.pointerEvents = 'none';
+    document.getElementById('css2d-labels').appendChild(css2DRenderer.domElement);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 3;
+    controls.maxDistance = 70;
+    controls.maxPolarAngle = Math.PI / 1.6;
+    controls.target.set(0, 2, 0);
+    controls.update();
+
+    // Post-processing
+    const renderScene = new RenderPass(scene, camera);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.3, 0.8);
+    const outputPass = new OutputPass();
+    composer = new EffectComposer(renderer);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+    composer.addPass(outputPass);
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040);
+    const ambientLight = new THREE.AmbientLight(0x10aa10, 1.0);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 7.5);
-    scene.add(directionalLight);
+    const pointLight = new THREE.PointLight(0x00ff00, 50, 30);
+    pointLight.position.set(0, 5, 0);
+    scene.add(pointLight);
 
-    // Create Matrix Background
+    // Raycasting Setup
+    raycaster = new THREE.Raycaster();
+    window.addEventListener('pointerdown', onPointerDown, false);
+
+    // Detail Panel Setup
+    const detailDiv = document.createElement('div');
+    detailDiv.className = 'detail-panel';
+    detailDiv.style.display = 'none'; // Start hidden
+    detailLabelObject = new CSS2DObject(detailDiv);
+    detailLabelObject.visible = false; // Ensure Three.js visibility is also false
+    scene.add(detailLabelObject);
+
+    // Other Setup
     createMatrixBackground();
-
-    // Setup UI Listeners
     document.getElementById('add-endpoint-btn').addEventListener('click', handleAddEndpoint);
-
-    // Handle Window Resize
     window.addEventListener('resize', onWindowResize, false);
 
-    // Start Animation Loop
-    animate();
+    // Add Default Endpoints
+    addDefaultEndpoints();
 
-    // Start Periodic Checks
+    // Start
+    animate();
     setInterval(checkAllEndpoints, CHECK_INTERVAL_MS);
 }
 
-// --- Matrix Background (Identical) ---
-function createMatrixBackground() { /* ... no changes ... */
-    const dropGeometry = new THREE.PlaneGeometry(0.1, 0.5);
-    const dropMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ff00,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.7
-    });
-    for (let i = 0; i < MATRIX_DROP_COUNT; i++) {
-        const drop = new THREE.Mesh(dropGeometry, dropMaterial.clone());
-        resetDrop(drop);
-        drop.position.y = Math.random() * 50 - 25;
-        scene.add(drop);
-        matrixDrops.push(drop);
-    }
-}
-function resetDrop(drop) { /* ... no changes ... */
-    drop.position.x = Math.random() * 40 - 20;
-    drop.position.z = Math.random() * 40 - 20;
-    drop.position.y = 25 + Math.random() * 10;
-    drop.userData.speed = MATRIX_SPEED_MIN + Math.random() * (MATRIX_SPEED_MAX - MATRIX_SPEED_MIN);
-}
-function updateMatrixBackground() { /* ... no changes ... */
-    matrixDrops.forEach(drop => {
-        drop.position.y -= drop.userData.speed;
-        drop.material.opacity = Math.max(0, 1.0 - (25 - drop.position.y) / 30);
-        if (drop.position.y < -25) {
-            resetDrop(drop);
-        }
+// --- Add Default Endpoints ---
+function addDefaultEndpoints() {
+    const defaults = [
+        { domain: 'google.com', port: 443 },
+        { domain: 'amazon.com', port: 443 },
+        { domain: 'github.com', port: 443 }, // Changed hetzner to github for variety
+        { domain: 'openai.com', port: 443 },
+        { domain: 'cloudflare.com', port: 443 },
+    ];
+    defaults.forEach(site => {
+        // Use the same logic as handleAddEndpoint uses internally
+        const url = 'https://' + site.domain;
+        addEndpointVisual(url, site.port);
     });
 }
 
-// --- Endpoint Monitoring ---
-function handleAddEndpoint() { /* ... no changes ... */
-    const urlInput = document.getElementById('endpoint-url');
+
+// --- Matrix Background Functions ---
+// (Identical - createMatrixBackground, resetDrop, updateMatrixBackground)
+function createMatrixBackground() { const dropGeometry = new THREE.PlaneGeometry(0.1, 0.5); const dropMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.7 }); for (let i = 0; i < MATRIX_DROP_COUNT; i++) { const drop = new THREE.Mesh(dropGeometry, dropMaterial.clone()); resetDrop(drop); drop.position.y = Math.random() * 70 - 35; scene.add(drop); matrixDrops.push(drop); } }
+function resetDrop(drop) { drop.position.x = Math.random() * 60 - 30; drop.position.z = Math.random() * 60 - 30; drop.position.y = 35 + Math.random() * 10; drop.userData.speed = MATRIX_SPEED_MIN + Math.random() * (MATRIX_SPEED_MAX - MATRIX_SPEED_MIN); }
+function updateMatrixBackground() { matrixDrops.forEach(drop => { drop.position.y -= drop.userData.speed; drop.material.opacity = Math.max(0.1, 1.0 - (35 - drop.position.y) / 40); if (drop.position.y < -35) { resetDrop(drop); } }); }
+
+
+// --- Endpoint Monitoring & Visualization ---
+
+// MODIFIED: Handles simplified input
+function handleAddEndpoint() {
+    const domainInput = document.getElementById('endpoint-domain');
     const portInput = document.getElementById('endpoint-port');
-    let urlValue = urlInput.value.trim();
-    const portValue = parseInt(portInput.value.trim(), 10);
 
-    if (!urlValue || !portValue) {
-        alert('Please provide both URL (including http:// or https://) and Port.');
-        return;
-    }
-    if (!urlValue.startsWith('http://') && !urlValue.startsWith('https://')) {
-        alert('URL must start with http:// or https://');
-        return;
-    }
-    if (portValue <= 0 || portValue > 65535) {
-        alert('Invalid port number.');
+    let domainValue = domainInput.value.trim();
+    const portString = portInput.value.trim();
+
+    // --- Input Validation ---
+    if (!domainValue) {
+        alert('Please provide a domain name (e.g., example.com).');
         return;
     }
 
-    const originalUrl = urlValue;
-    const originalPort = portValue;
+    // Remove potential http/https prefixes added by user
+    domainValue = domainValue.replace(/^https?:\/\//, '');
+    // Remove potential trailing slash
+    domainValue = domainValue.replace(/\/$/, '');
 
-    addEndpointVisual(originalUrl, originalPort);
-    urlInput.value = '';
+    if (!domainValue) { // Check again after cleaning
+        alert('Please provide a valid domain name.');
+        return;
+    }
+    // Basic check for invalid characters (allow letters, numbers, hyphens, dots)
+    if (!/^[a-zA-Z0-9.-]+$/.test(domainValue)) {
+        alert('Domain name contains invalid characters.');
+        return;
+    }
+
+    // Determine URL and Port
+    const url = 'https://' + domainValue; // Default to HTTPS
+    let port = 443; // Default port for HTTPS
+
+    if (portString) {
+        const parsedPort = parseInt(portString, 10);
+        if (isNaN(parsedPort) || parsedPort <= 0 || parsedPort > 65535) {
+            alert('Invalid port number provided. Must be between 1 and 65535.');
+            return;
+        }
+        port = parsedPort;
+    }
+    // --- End Validation ---
+
+    // Add the visual representation
+    addEndpointVisual(url, port);
+
+    // Clear the input fields
+    domainInput.value = '';
     portInput.value = '';
 }
 
+// (addEndpointVisual remains largely the same, just uses the url/port passed in)
 function addEndpointVisual(url, port) {
-    // --- Create Cube (Mesh) ---
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshStandardMaterial({
-        color: PENDING_COLOR,
-        roughness: 0.5,
-        metalness: 0.2
+        color: PENDING_COLOR, emissive: PENDING_COLOR, emissiveIntensity: 0.3,
+        roughness: 0.6, metalness: 0.1
     });
     const cube = new THREE.Mesh(geometry, material);
+    cube.userData.isEndpoint = true;
 
     const count = monitoredEndpoints.length;
     const gridX = (count % endpointGrid.cols) * endpointGrid.spacing - ((endpointGrid.cols - 1) * endpointGrid.spacing / 2);
     const gridY = 0;
     const gridZ = -Math.floor(count / endpointGrid.cols) * endpointGrid.spacing;
-
-    cube.position.set(gridX, gridY + 0.5, gridZ); // Cube sits on y=0 plane
+    cube.position.set(gridX, gridY + 0.5, gridZ);
     scene.add(cube);
 
-    // --- Create Label (CSS2DObject) ---
-    let displayUrl = url;
-    try {
-        const parsed = new URL(url);
-        if (!((parsed.protocol === 'http:' && port === 80) || (parsed.protocol === 'https:' && port === 443))) {
-            displayUrl = `${parsed.hostname}:${port}`; // Show hostname:port for non-standard
-        } else {
-            displayUrl = parsed.hostname; // Just hostname for standard ports
-        }
-        // Limit length for display
-        if (displayUrl.length > 30) {
-            displayUrl = displayUrl.substring(0, 27) + '...';
-        }
-    } catch(e) {
-        displayUrl = `${url}:${port}`; // Fallback
-        if (displayUrl.length > 30) {
-            displayUrl = displayUrl.substring(0, 27) + '...';
-        }
-    }
+    // Label Creation (remains the same)
+    let displayUrl = url; try { const parsed = new URL(url); const isStd = (parsed.protocol === 'http:' && port === 80) || (parsed.protocol === 'https:' && port === 443); displayUrl = isStd ? parsed.hostname : `${parsed.hostname}:${port}`; if (displayUrl.length > 25) { displayUrl = displayUrl.substring(0, 22) + '...'; } } catch (e) { displayUrl = `${url}:${port}`; if (displayUrl.length > 25) { displayUrl = displayUrl.substring(0, 22) + '...'; } }
+    const labelDiv = document.createElement('div'); labelDiv.className = 'endpoint-label status-pending'; labelDiv.textContent = displayUrl;
+    const labelObject = new CSS2DObject(labelDiv); labelObject.position.set(0, 0.8, 0); cube.add(labelObject);
 
-
-    const labelDiv = document.createElement('div');
-    labelDiv.className = 'endpoint-label status-pending'; // Add base class and initial status
-    labelDiv.textContent = displayUrl;
-
-    const labelObject = new CSS2DObject(labelDiv);
-    // Position label slightly above the cube center
-    labelObject.position.set(0, 1.0, 0); // Position relative to the cube's origin
-    cube.add(labelObject); // Attach label to the cube
-
-    // --- Store Data ---
+    // Store Endpoint Data
     const endpointData = {
-        id: nextEndpointId++,
-        url: url,
-        port: port,
-        displayUrl: displayUrl, // Store the potentially shortened display URL
-        mesh: cube,
-        labelObject: labelObject, // Store reference to the label
-        status: 'PENDING',
-        lastCheck: Date.now()
+        id: nextEndpointId++, url, port, displayUrl,
+        mesh: cube, labelObject,
+        status: 'PENDING', detailText: '', lastCheck: Date.now()
     };
     monitoredEndpoints.push(endpointData);
+    cube.userData.endpointData = endpointData; // Link mesh back to data
 
     checkEndpointStatus(endpointData); // Initial check
 }
 
-// Check Status via Proxy (Identical logic, just updates label now)
+// (checkEndpointStatus remains the same logic)
 async function checkEndpointStatus(endpointData) {
-    console.log(`Requesting proxy check for: ${endpointData.url}:${endpointData.port}`);
-    updateEndpointVisual(endpointData, 'PENDING');
+    console.log(`Proxy check: ${endpointData.url}:${endpointData.port}`);
+    updateEndpointVisual(endpointData, 'PENDING', '');
 
     try {
-        const response = await fetch(PROXY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', },
-            body: JSON.stringify({ url: endpointData.url, port: endpointData.port }),
-        });
+        const response = await fetch(PROXY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ url: endpointData.url, port: endpointData.port }), });
+        const data = await response.json();
 
         if (!response.ok) {
-            console.error(`Proxy Error for ${endpointData.displayUrl}: Status ${response.status}`);
-            updateEndpointVisual(endpointData, 'PROXY_ERROR', `Proxy responded with ${response.status}`);
-            return;
+            console.error(`Proxy Error for ${endpointData.displayUrl}: Status ${response.status}, Detail: ${data.detail}`);
+            const detail = data.detail || `Proxy responded with ${response.status}`;
+            updateEndpointVisual(endpointData, data.status || 'PROXY_ERROR', detail);
+        } else {
+            console.log(`Proxy response for ${endpointData.displayUrl}:`, data);
+            updateEndpointVisual(endpointData, data.status, data.detail || '');
         }
-
-        const data = await response.json();
-        console.log(`Proxy response for ${endpointData.displayUrl}:`, data);
-        updateEndpointVisual(endpointData, data.status, data.detail);
 
     } catch (error) {
-        console.error(`Error contacting proxy for ${endpointData.displayUrl}:`, error);
-        updateEndpointVisual(endpointData, 'PROXY_ERROR', 'Cannot reach proxy');
+        console.error(`Network error contacting proxy for ${endpointData.displayUrl}:`, error);
+        updateEndpointVisual(endpointData, 'PROXY_ERROR', 'Network error: Cannot reach proxy');
     } finally {
         endpointData.lastCheck = Date.now();
+        if (selectedEndpointData && selectedEndpointData.id === endpointData.id) {
+            // Refresh detail panel if it's currently showing this endpoint
+            showDetailPanel(selectedEndpointData);
+        }
     }
 }
 
-// Update Visuals (Cube AND Label)
-function updateEndpointVisual(endpointData, newStatus, detail = '') {
+// (updateEndpointVisual remains the same logic)
+function updateEndpointVisual(endpointData, newStatus, detailText = '') {
     endpointData.status = newStatus;
-    let targetColor;
-    let statusClass = 'status-unknown'; // Default CSS class part
+    endpointData.detailText = detailText;
+
+    let targetColor, statusClass = 'status-unknown', emissiveIntensity = 0.3;
 
     switch (newStatus) {
-        case 'OK':
-            targetColor = OK_COLOR;
-            statusClass = 'status-ok';
-            break;
-        case 'ERROR':
-            targetColor = ERROR_COLOR;
-            statusClass = 'status-error';
-            break;
-        case 'TIMEOUT':
-            targetColor = TIMEOUT_COLOR;
-            statusClass = 'status-timeout';
-            break;
-        case 'PROXY_ERROR':
-        case 'INVALID_REQUEST':
-            targetColor = PROXY_ERROR_COLOR;
-            statusClass = 'status-proxy_error'; // Use same class for simplicity
-            break;
-        case 'PENDING':
-        default:
-            targetColor = PENDING_COLOR;
-            statusClass = 'status-pending';
-            break;
+        case 'OK': targetColor = OK_COLOR; statusClass = 'status-ok'; emissiveIntensity = 0.6; break;
+        case 'ERROR': targetColor = ERROR_COLOR; statusClass = 'status-error'; break;
+        case 'TIMEOUT': targetColor = TIMEOUT_COLOR; statusClass = 'status-timeout'; break;
+        case 'PROXY_ERROR': case 'INVALID_REQUEST': targetColor = PROXY_ERROR_COLOR; statusClass = 'status-proxy_error'; break;
+        case 'PENDING': default: targetColor = PENDING_COLOR; statusClass = 'status-pending'; break;
     }
 
-    // Update Cube Color
     if (endpointData.mesh.material.color.getHex() !== targetColor) {
         endpointData.mesh.material.color.setHex(targetColor);
+        endpointData.mesh.material.emissive.setHex(targetColor);
+        endpointData.mesh.material.emissiveIntensity = emissiveIntensity;
+    }
+    endpointData.labelObject.element.className = `endpoint-label ${statusClass}`;
+}
+
+// (checkAllEndpoints remains the same)
+function checkAllEndpoints() { console.log("--- Periodic Checks ---"); monitoredEndpoints.forEach(ep => checkEndpointStatus(ep)); }
+
+
+// --- Interaction ---
+
+// MODIFIED: Handle toggle logic
+function onPointerDown(event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    let foundEndpoint = false;
+    let clickedData = null;
+
+    for (let i = 0; i < intersects.length; i++) {
+        let object = intersects[i].object;
+        while (object) {
+            if (object.userData.isEndpoint && object.userData.endpointData) {
+                clickedData = object.userData.endpointData;
+                foundEndpoint = true;
+                break;
+            }
+            object = object.parent;
+        }
+        if (foundEndpoint) break;
     }
 
-    // Update Label Class for styling
-    const labelElement = endpointData.labelObject.element;
-    // Reset classes, keep base class, add new status class
-    labelElement.className = `endpoint-label ${statusClass}`;
-
-    // Optional: Update label text content if needed (e.g., add detail)
-    // labelElement.textContent = `${endpointData.displayUrl} (${newStatus})`;
+    if (foundEndpoint) {
+        // Clicked on an endpoint cube
+        if (selectedEndpointData && selectedEndpointData.id === clickedData.id) {
+            // Clicked the SAME cube that is already selected -> Hide panel (toggle off)
+            hideDetailPanel();
+        } else {
+            // Clicked a DIFFERENT cube (or no cube was selected before) -> Show panel
+            selectedEndpointData = clickedData;
+            showDetailPanel(selectedEndpointData);
+        }
+    } else {
+        // Clicked on empty space -> Hide panel
+        hideDetailPanel();
+    }
 }
 
-// Check all endpoints periodically (Identical)
-function checkAllEndpoints() { /* ... no changes ... */
-    console.log("--- Running Periodic Proxy Checks ---");
-    monitoredEndpoints.forEach(endpoint => {
-        checkEndpointStatus(endpoint);
-    });
+// MODIFIED: Ensure visibility is correctly set
+function showDetailPanel(endpointData) {
+    if (!detailLabelObject) return;
+
+    const div = detailLabelObject.element;
+    div.style.display = 'block'; // Make HTML element visible
+    detailLabelObject.visible = true; // Make Three.js object visible
+
+    const now = Date.now();
+    const elapsedSeconds = Math.round((now - endpointData.lastCheck) / 1000);
+    const timeAgo = elapsedSeconds < 2 ? 'Just now' : (elapsedSeconds < 60 ? `${elapsedSeconds}s ago` : `${Math.floor(elapsedSeconds / 60)}m ago`);
+
+    div.innerHTML = `
+        <strong>Target:</strong> <span>${endpointData.displayUrl}</span><br>
+        <strong>URL:</strong> <span style="font-size: 9px;">${endpointData.url}:${endpointData.port}</span><br>
+        <strong>Status:</strong> <span class="status-${endpointData.status.toLowerCase()}">${endpointData.status}</span><br>
+        <strong>Detail:</strong> <span style="word-break: break-all;">${endpointData.detailText || 'N/A'}</span><br>
+        <strong>Checked:</strong> <span>${timeAgo}</span>
+    `;
+
+    // Position panel relative to the cube
+    const offset = new THREE.Vector3(1.5, 1.5, 0); // Offset from cube center
+    const worldPosition = endpointData.mesh.getWorldPosition(new THREE.Vector3());
+    detailLabelObject.position.copy(worldPosition).add(offset);
 }
 
-// --- Animation Loop ---
+// MODIFIED: Ensure visibility is correctly set and clear selection
+function hideDetailPanel() {
+    if (detailLabelObject) {
+        detailLabelObject.element.style.display = 'none'; // Hide HTML element
+        detailLabelObject.visible = false; // Hide Three.js object
+    }
+    selectedEndpointData = null; // Clear the selection
+}
+
+
+// --- Animation Loop --- (No changes needed here)
 function animate() {
     requestAnimationFrame(animate);
-
-    // Update Matrix Background
+    controls.update();
     updateMatrixBackground();
 
-    // Update Endpoint Animations
     monitoredEndpoints.forEach(ep => {
         if (ep.status === 'OK') {
-            const time = Date.now() * 0.002;
-            ep.mesh.scale.y = 1.0 + Math.sin(time + ep.id) * 0.05;
-        } else {
-            ep.mesh.scale.y = 1.0;
+            const time = Date.now() * 0.0025;
+            ep.mesh.material.emissiveIntensity = 0.4 + Math.sin(time + ep.id) * 0.3;
+        } else if (ep.mesh.material.emissiveIntensity > 0.3) {
+            ep.mesh.material.emissiveIntensity = Math.max(0.3, ep.mesh.material.emissiveIntensity * 0.95);
         }
-        ep.mesh.rotation.y += 0.005;
     });
 
-    // Render WebGL Scene
-    renderer.render(scene, camera);
-    // Render CSS2D Scene (Labels)
-    css2DRenderer.render(scene, camera);
+    composer.render(); // Use composer for rendering
+    css2DRenderer.render(scene, camera); // Render labels on top
 }
 
-// --- Event Handlers ---
+// --- Event Handlers --- (No changes needed here)
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-
-    // Resize both renderers
     renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
     css2DRenderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// --- Start ---
+// --- Start Application ---
 init();
