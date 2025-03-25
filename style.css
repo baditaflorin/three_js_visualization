@@ -1,181 +1,229 @@
-/* Basic page setup */
+/* --- Basic Reset & Setup --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    margin: 0;
-    overflow: hidden; /* Prevent scrollbars on the body */
-    background-color: #000; /* Black background */
-    color: #00ff00; /* Default text color (green) */
-    /* Prioritize Matrix-like fonts */
-    font-family: 'Lucida Console', 'Monaco', 'Courier New', Courier, monospace;
+    font-family: 'Source Code Pro', monospace; /* Base font, good for structure */
+    line-height: 1.6;
+    background-color: #f0f0f0; /* Allowed for readability */
+    color: #333;
+    padding: 20px;
 }
 
-/* Container for the main WebGL canvas */
-#webgl-container {
-    position: fixed; /* Fix position to cover viewport */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1; /* Place WebGL canvas below labels but above body background */
+/* --- Typography --- */
+h1, h2, h3 {
+    font-family: 'Roboto Slab', serif; /* Heading font */
+    margin-bottom: 0.5em;
+    color: #1a1a1a;
 }
 
-/* Styling for the WebGL canvas itself (for cursor) */
-#webgl-container canvas {
-    display: block; /* Prevent potential extra space below canvas */
-    cursor: grab; /* Indicate interactivity */
-}
-#webgl-container canvas:active {
-    cursor: grabbing; /* Indicate dragging */
+h1 {
+    font-size: 2.5em;
+    text-align: center;
 }
 
-/* Container for the CSS2D HTML labels (both main and detail) */
-#css2d-labels {
-    position: fixed; /* Fix position to cover viewport */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2; /* Place labels on top of the WebGL canvas */
-    pointer-events: none; /* VERY IMPORTANT: Allows mouse events (drag, scroll, click) to pass through to the underlying canvas for OrbitControls and Raycaster */
-    overflow: hidden; /* Hide anything extending beyond the viewport */
-    color: #fff; /* Default label text color (if not overridden) */
+h2 {
+    font-size: 1.8em;
+    /* Decorative underline using characters */
+    position: relative;
+    display: inline-block; /* Needed for pseudo-element positioning */
+    margin-bottom: 1em;
 }
 
-/* Styling for individual endpoint labels (the small ones attached to cubes) */
-.endpoint-label {
-    font-family: inherit; /* Use body font */
-    font-size: 10px;    /* Small font size */
-    color: #ffffff;     /* Default text color (white for contrast on dark background) */
-    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
-    padding: 2px 5px;   /* Small padding */
-    border-radius: 3px; /* Slightly rounded corners */
-    white-space: nowrap;/* Prevent label text from wrapping */
-    text-shadow: 0 0 3px #00ff00; /* Add subtle green text glow */
-    /* Inherits pointer-events: none, no interaction needed for these */
-}
-
-/* Status-specific colors for the small endpoint labels */
-.endpoint-label.status-ok { color: #00FF00; } /* Bright Green */
-.endpoint-label.status-error { color: #FF4444; } /* Brighter Red for visibility */
-.endpoint-label.status-timeout { color: #FFFF66; } /* Yellowish for Timeout */
-.endpoint-label.status-pending { color: #99FF99; } /* Pale Green for Pending */
-.endpoint-label.status-proxy_error,
-.endpoint-label.status-invalid_request { color: #AAAAAA; } /* Grey */
-
-/* Styling for the Click Detail Panel (the larger info box) */
-.detail-panel {
-    font-family: inherit; /* Use body font */
-    font-size: 11px;        /* Slightly larger font */
-    color: #00ff00;         /* Green text */
-    background-color: rgba(0, 20, 0, 0.9); /* Darker, more opaque background */
-    border: 1px solid #00cc00; /* Slightly darker green border */
-    padding: 8px 12px;      /* Padding inside the panel */
-    border-radius: 4px;     /* Rounded corners */
-    width: 220px;           /* Fixed width */
-    pointer-events: auto;   /* Allow text selection if needed, though it visually floats */
-    text-shadow: 0 0 4px #00ff00; /* Green text glow */
-    line-height: 1.5;       /* Spacing between lines */
-    /* Starts hidden via JS (display: none) */
-}
-
-/* Styling within the detail panel */
-.detail-panel strong {
-    color: #ffffff; /* White for field names (Target, Status, etc.) */
-    margin-right: 5px; /* Space after the field name */
-    display: inline-block; /* Ensure proper layout */
-    min-width: 60px;      /* Align values slightly */
-}
-
-.detail-panel span {
-    color: #99ff99; /* Lighter green for the actual values */
-}
-
-/* Specific styling for the status value within the detail panel */
-.detail-panel .status-ok { color: #00FF00; font-weight: bold; }
-.detail-panel .status-error { color: #FF4444; font-weight: bold; }
-.detail-panel .status-timeout { color: #FFFF66; font-weight: bold; }
-.detail-panel .status-pending { color: #99FF99; font-weight: bold; }
-.detail-panel .status-proxy_error,
-.detail-panel .status-invalid_request { color: #AAAAAA; font-weight: bold; }
-
-
-/* Styling for the top-left UI control panel */
-#monitor-ui {
-    position: fixed; /* Keep UI fixed in the top-left corner */
-    top: 10px;
-    left: 10px;
-    background-color: rgba(0, 20, 0, 0.85); /* Dark green, mostly opaque background */
-    border: 1px solid #00ff00; /* Green border */
-    padding: 15px;
-    border-radius: 5px;
-    z-index: 10; /* Ensure UI is on top of everything else */
-    max-width: 300px; /* Limit width */
-    color: #00ff00; /* UI text color */
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); /* Add subtle green glow to UI */
-}
-
-#monitor-ui h2 {
-    margin-top: 0;
-    font-size: 1.2em;
-    border-bottom: 1px solid #00ff00;
-    padding-bottom: 5px;
-    margin-bottom: 10px;
-    text-shadow: 0 0 5px #00ff00; /* Glow for header */
-}
-
-#monitor-ui label {
-    display: block; /* Make labels take full width */
-    margin-top: 10px;
-    font-size: 0.9em;
-}
-
-#monitor-ui input[type="text"],
-#monitor-ui input[type="number"] {
-    width: calc(100% - 12px); /* Full width minus padding */
-    background-color: #001100; /* Very dark green background */
-    border: 1px solid #00ff00; /* Green border */
-    color: #00ff00; /* Green text */
-    padding: 5px;
-    margin-top: 3px;
-    font-family: inherit; /* Use the same monospaced font */
-    border-radius: 2px;
-}
-
-/* Remove spinners from number input (optional aesthetics) */
-#monitor-ui input[type=number]::-webkit-inner-spin-button,
-#monitor-ui input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-#monitor-ui input[type=number] {
-    -moz-appearance: textfield; /* Firefox */
-}
-
-
-#monitor-ui button {
-    margin-top: 15px;
-    background-color: #003300; /* Darker green button */
-    border: 1px solid #00ff00;
-    color: #00ff00;
-    padding: 8px 15px;
-    cursor: pointer;
-    font-family: inherit;
-    border-radius: 3px;
-    transition: background-color 0.3s, color 0.3s; /* Smooth hover effect */
-    text-shadow: 0 0 3px #00ff00; /* Subtle glow */
-}
-
-#monitor-ui button:hover {
-    background-color: #00ff00; /* Bright green background on hover */
-    color: #000; /* Black text on hover */
-    text-shadow: none; /* Remove glow on hover */
-}
-
-/* Warning message styling */
-.warning {
-    margin-top: 15px;
+h2::after {
+    content: '──────────────────'; /* Unicode line */
+    display: block;
+    font-family: 'Source Code Pro', monospace; /* Ensure consistent character width */
+    color: #aaa;
     font-size: 0.8em;
-    color: #ffcc00; /* Yellowish warning color */
-    border-top: 1px dashed #555; /* Dashed line separator */
-    padding-top: 10px;
-    line-height: 1.3;
+    margin-top: 0.2em;
+    overflow: hidden; /* Prevent wrap */
+    white-space: nowrap; /* Prevent wrap */
+    letter-spacing: -1px; /* Adjust spacing if needed */
+}
+
+p {
+    margin-bottom: 1em;
+    max-width: 70ch; /* Improve readability */
+}
+
+a {
+    color: #0077cc;
+    text-decoration: none; /* Remove default underline */
+}
+
+a:hover {
+    /* Simulate underline with font character */
+    border-bottom: 2px solid #0077cc; /* Fallback - or use pseudo */
+    /* Alternative: text-decoration: underline wavy #0077cc; */
+}
+
+/* --- Layout & Header/Footer --- */
+.site-header,
+.site-footer {
+    text-align: center;
+    margin-bottom: 2em;
+    font-family: 'Source Code Pro', monospace;
+    color: #555;
+}
+
+.site-header h1 i { /* Icon in header */
+    color: #0077cc;
+    margin-right: 0.2em;
+}
+
+.site-footer p {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 2em;
+}
+
+main {
+    max-width: 800px;
+    margin: 0 auto; /* Center content */
+}
+
+section {
+    margin-bottom: 2em;
+}
+
+/* --- Navigation --- */
+.main-nav {
+    text-align: center;
+    margin-bottom: 2em;
+    font-family: 'Roboto Slab', serif;
+}
+
+.main-nav a {
+    margin: 0 1em;
+    font-size: 1.1em;
+    color: #333;
+    padding: 0.3em 0.5em;
+    border-radius: 4px; /* Slight cheat, but looks better */
+    transition: background-color 0.2s ease;
+}
+
+.main-nav a:hover {
+    background-color: #ddd; /* Highlight on hover */
+    border-bottom: none; /* Remove underline simulation on hover */
+}
+
+.main-nav i {
+    margin-right: 0.4em;
+    color: #0077cc;
+}
+
+/* --- Font Box with Character Borders --- */
+.font-box {
+    margin-bottom: 2em;
+    padding: 1.5em;
+    position: relative; /* Needed for pseudo-elements */
+    background-color: #fff; /* Background for contrast */
+}
+
+/* Using pseudo-elements for borders */
+.font-box::before,
+.font-box::after {
+    content: '';
+    position: absolute;
+    font-family: 'Source Code Pro', monospace;
+    color: #888;
+    font-size: 1.2em; /* Adjust size of border characters */
+    line-height: 1;
+}
+
+/* Top/Bottom Borders */
+.font-box::before {
+    content: '┌────────────────────────────────────────────────────────────┐'; /* Adjust length as needed */
+    top: 0;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.font-box::after {
+    content: '└────────────────────────────────────────────────────────────┘'; /* Adjust length as needed */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* Add side borders (can be trickier to align perfectly) */
+/* For simplicity, often omitted or done with padding/background */
+
+.font-box-title {
+    text-align: center;
+    margin-top: 0; /* Adjust because of border */
+}
+
+.font-box-title i {
+    color: #f39c12; /* Orange hand */
+}
+
+
+/* --- Buttons --- */
+.button {
+    display: inline-block;
+    font-family: 'Roboto Slab', serif;
+    padding: 0.6em 1.2em;
+    margin: 0.5em 0.5em 0.5em 0;
+    background-color: #0077cc;
+    color: #fff;
+    border: none; /* No default border */
+    border-radius: 4px; /* Optional rounding */
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+}
+
+.button:hover {
+    background-color: #005fa3;
+    border-bottom: none;
+}
+
+.button i {
+    margin-right: 0.5em;
+}
+
+/* Alternate button style */
+.button.alt {
+    background-color: #e15f41;
+}
+
+.button.alt:hover {
+    background-color: #c0392b;
+}
+
+
+/* --- Icon Gallery --- */
+.icon-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5em;
+    justify-content: center;
+    padding: 1em;
+    background-color: #e0e0e0; /* Light background for gallery */
+    border-radius: 4px;
+}
+
+.icon-gallery i {
+    color: #555;
+}
+
+/* --- ASCII Art --- */
+.ascii-art {
+    font-family: 'Source Code Pro', monospace;
+    white-space: pre; /* Preserve whitespace */
+    background-color: #2d2d2d; /* Dark background */
+    color: #9fca56;      /* Greenish text */
+    padding: 1em;
+    border-radius: 4px;
+    display: inline-block; /* Fit content */
+    line-height: 1.2;
 }
