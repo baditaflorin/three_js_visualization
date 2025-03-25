@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Glowdrop Catcher Debug</title>
+    <title>Glowdrop Catcher Powerups!</title>
+    <meta charset="UTF-8">
     <style>
         /* Basic reset and full window setup */
         html, body {
@@ -9,16 +10,16 @@
             padding: 0;
             overflow: hidden; /* Prevent scrollbars */
             height: 100%;
-            background-color: #1a1a3a; /* Background for areas outside canvas (if any) */
+            background-color: #1a1a3a;
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
             color: white;
         }
         canvas {
-            display: block; /* Removes bottom space under canvas */
-            width: 100vw; /* Make canvas fill viewport width */
-            height: 100vh; /* Make canvas fill viewport height */
-            background-color: #2a2a5a; /* Canvas background color */
-            cursor: none; /* Hide the default mouse cursor */
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background-color: #2a2a5a;
+            cursor: none;
         }
         #info { /* Score display */
             position: absolute;
@@ -35,55 +36,31 @@
             top: 10px;
             right: 10px;
             background-color: rgba(0, 0, 0, 0.75);
-            color: #0f0; /* Green text */
+            color: #0f0;
             padding: 15px;
             border: 1px solid #0a0;
             border-radius: 5px;
             font-family: monospace;
             font-size: 13px;
             line-height: 1.4;
-            z-index: 100; /* Ensure it's above everything */
+            z-index: 100;
             display: none; /* Initially hidden */
-            min-width: 220px;
-            max-height: 90vh; /* Limit height */
-            overflow-y: auto; /* Add scroll if content overflows */
+            min-width: 240px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         #debugPanel h4 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 14px;
-            border-bottom: 1px solid #0a0;
-            padding-bottom: 5px;
-            color: #0f0;
+            margin-top: 0; margin-bottom: 10px; font-size: 14px;
+            border-bottom: 1px solid #0a0; padding-bottom: 5px; color: #0f0;
         }
-        #debugPanel div {
-            margin-bottom: 6px;
-            white-space: nowrap;
-        }
-        #debugPanel span { /* Display values */
-            color: #ff0; /* Yellow values */
-            margin-left: 5px;
-        }
-        #debugPanel label {
-            display: inline-block;
-            width: 140px; /* Adjust as needed */
-            color: #0f0;
-        }
+        #debugPanel div { margin-bottom: 6px; white-space: nowrap; }
+        #debugPanel span { color: #ff0; margin-left: 5px; } /* Yellow values */
+        #debugPanel label { display: inline-block; width: 150px; color: #0f0; }
         #debugPanel input[type="number"] {
-            width: 65px; /* Adjust as needed */
-            background-color: #111;
-            color: #0f0;
-            border: 1px solid #0a0;
-            padding: 3px;
-            font-family: monospace;
-            font-size: 12px;
-            margin-left: 5px;
+            width: 70px; background-color: #111; color: #0f0;
+            border: 1px solid #0a0; padding: 3px; font-family: monospace; font-size: 12px; margin-left: 5px;
         }
-        #debugPanel hr {
-            border: none;
-            border-top: 1px dashed #0a0;
-            margin: 10px 0;
-        }
+        #debugPanel hr { border: none; border-top: 1px dashed #0a0; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -98,30 +75,19 @@
     <div>Catcher Size: <span id="debugSize">1.000</span></div>
     <div>Smoothing: <span id="debugSmoothing">0.180</span></div>
     <hr>
-    <div>
-        <label for="inputSpawn">Spawn Interval (ms):</label>
-        <input type="number" id="inputSpawn" step="50" min="50">
-    </div>
-    <div>
-        <label for="inputMaxDrops">Max Drops:</label>
-        <input type="number" id="inputMaxDrops" step="1" min="1">
-    </div>
-    <div>
-        <label for="inputGrowth">Growth Rate:</label>
-        <input type="number" id="inputGrowth" step="0.001" min="0" max="0.1">
-    </div>
-    <div>
-        <label for="inputSmoothing">Initial Smoothing:</label>
-        <input type="number" id="inputSmoothing" step="0.01" min="0.01" max="0.5">
-    </div>
-    <div>
-        <label for="inputMinSmoothing">Min Smoothing:</label>
-        <input type="number" id="inputMinSmoothing" step="0.005" min="0.01" max="0.2">
-    </div>
-    <div>
-        <label for="inputMaxMult">Max Size Multi:</label>
-        <input type="number" id="inputMaxMult" step="0.1" min="1" max="10">
-    </div>
+    <div><label for="inputSpawn">Spawn Interval (ms):</label><input type="number" id="inputSpawn" step="50" min="50"></div>
+    <div><label for="inputMaxDrops">Max Drops:</label><input type="number" id="inputMaxDrops" step="1" min="1"></div>
+    <div><label for="inputGrowth">Growth Rate:</label><input type="number" id="inputGrowth" step="0.001" min="0" max="0.1"></div>
+    <div><label for="inputSmoothing">Initial Smoothing:</label><input type="number" id="inputSmoothing" step="0.01" min="0.01" max="0.5"></div>
+    <div><label for="inputMinSmoothing">Min Smoothing:</label><input type="number" id="inputMinSmoothing" step="0.005" min="0.01" max="0.2"></div>
+    <div><label for="inputMaxMult">Max Size Multi:</label><input type="number" id="inputMaxMult" step="0.1" min="1" max="10"></div>
+    <hr>
+    <div><label for="inputSpecialChance">Special Chance (%):</label><input type="number" id="inputSpecialChance" step="1" min="0" max="100"></div>
+    <div><label for="inputPowerupDuration">Powerup Duration (ms):</label><input type="number" id="inputPowerupDuration" step="500" min="1000"></div>
+    <div><label for="inputScoreMulti">Score Multiplier:</label><input type="number" id="inputScoreMulti" step="1" min="1"></div>
+    <div><label for="inputShrinkFactor">Shrink Factor:</label><input type="number" id="inputShrinkFactor" step="0.05" min="0.1" max="1.0"></div>
+    <div><label for="inputGravity">Gravity Force:</label><input type="number" id="inputGravity" step="0.01" min="0" max="1.0"></div>
+    <div><label for="inputTailMulti">Tail Multiplier:</label><input type="number" id="inputTailMulti" step="0.1" min="1" max="5"></div>
     <hr>
     <div><em>Game Time:</em> <span id="debugGameTime">0</span>ms</div>
 </div>
@@ -141,14 +107,20 @@
     const debugParticlesElement = document.getElementById('debugParticles');
     const debugSizeElement = document.getElementById('debugSize');
     const debugSmoothingElement = document.getElementById('debugSmoothing');
-    const debugGameTimeElement = document.getElementById('debugGameTime'); // Added Game Time display
-
+    const debugGameTimeElement = document.getElementById('debugGameTime');
+    // Debug Inputs
     const inputSpawnElement = document.getElementById('inputSpawn');
     const inputMaxDropsElement = document.getElementById('inputMaxDrops');
     const inputGrowthElement = document.getElementById('inputGrowth');
     const inputSmoothingElement = document.getElementById('inputSmoothing');
     const inputMinSmoothingElement = document.getElementById('inputMinSmoothing');
     const inputMaxMultElement = document.getElementById('inputMaxMult');
+    const inputSpecialChanceElement = document.getElementById('inputSpecialChance');
+    const inputPowerupDurationElement = document.getElementById('inputPowerupDuration');
+    const inputScoreMultiElement = document.getElementById('inputScoreMulti');
+    const inputShrinkFactorElement = document.getElementById('inputShrinkFactor');
+    const inputGravityElement = document.getElementById('inputGravity');
+    const inputTailMultiElement = document.getElementById('inputTailMulti');
 
     // --- Screen and Resize Handling ---
     let SCREEN_WIDTH = window.innerWidth;
@@ -164,37 +136,46 @@
         initializeStars();
         catcherX = Math.max(0, Math.min(SCREEN_WIDTH, catcherX));
         catcherY = Math.max(0, Math.min(SCREEN_HEIGHT, catcherY));
-        mouseX = catcherX;
-        mouseY = catcherY;
-        console.log(`Resized to <span class="math-inline">\{SCREEN\_WIDTH\}x</span>{SCREEN_HEIGHT}`);
+        mouseX = catcherX; mouseY = catcherY;
+        console.log(`Resized to ${SCREEN_WIDTH}x${SCREEN_HEIGHT}`);
     }
     window.addEventListener('resize', handleResize);
 
-    // --- Game Constants & Tunable Variables (using let) ---
+    // --- Game Constants & Tunable Variables ---
     let GLOWDROP_RADIUS = 14;
     let GLOWDROP_SPEED_MIN = 1.2;
     let GLOWDROP_SPEED_MAX = 3.5;
-    let GLOWDROP_SPAWN_INTERVAL = 800; // ms
+    let GLOWDROP_SPAWN_INTERVAL = 800;
     let MAX_GLOWDROPS = 25;
-    // const BACKGROUND_COLOR = "#2a2a5a"; // Defined in CSS
 
-    const COLORS = { /* Colors remain const */
-        "pink": "rgb(255, 150, 200)", "sky": "rgb(135, 206, 250)",
-        "mint": "rgb(150, 255, 180)", "lavender": "rgb(200, 160, 255)",
-        "peach": "rgb(255, 200, 150)", "lemon": "rgb(255, 250, 150)",
+    const COLORS = {
+        "pink": "rgb(255, 150, 200)", "sky": "rgb(135, 206, 250)", "mint": "rgb(150, 255, 180)",
+        "lavender": "rgb(200, 160, 255)", "peach": "rgb(255, 200, 150)", "lemon": "rgb(255, 250, 150)",
     };
     const COLOR_NAMES = Object.keys(COLORS);
 
-    // --- Catcher & Trail (using let for tunable vars) ---
-    let INITIAL_CATCHER_RADIUS = 20; // Note: This is now just the base radius value
-    let INITIAL_TRAIL_WIDTH = INITIAL_CATCHER_RADIUS * 1.8; // Base width also scales with base radius
+    // --- Catcher & Trail ---
+    let INITIAL_CATCHER_RADIUS = 20;
     const TRAIL_LENGTH = 35;
     let INITIAL_SMOOTHING = 0.18;
     let MIN_SMOOTHING = 0.04;
     let GROWTH_RATE = 0.018;
     let MAX_CATCHER_MULTIPLIER = 3.5;
 
-    // --- Particles (const is fine here) ---
+    // --- Powerups ---
+    let SPECIAL_DROP_CHANCE = 0.1;
+    let POWERUP_DURATION = 7000;
+    let SCORE_MULTIPLIER = 3;
+    let SHRINK_FACTOR = 0.6;
+    let GRAVITY_FORCE = 0.15;
+    let TAIL_LENGTH_MULTIPLIER = 2.0;
+    const ACTIVATION_MESSAGE_DURATION = 2000; // ms for big text display
+    const POWERUP_TYPES = ['tail', 'gravity', 'score', 'shrink', 'colorpop'];
+    const POWERUP_VISUALS = {
+        tail: '~', gravity: '@', score: '$', shrink: '-', colorpop: '*'
+    };
+
+    // --- Particles ---
     const PARTICLE_COUNT_FIREWORK = 30;
     const PARTICLE_SPEED_FIREWORK = 4.5;
     const PARTICLE_LIFE_FIREWORK = 65;
@@ -213,122 +194,61 @@
     let stars = [];
     let lastSpawnTime = 0;
     let gameTime = 0;
+    let activePowerups = { tail: 0, gravity: 0, score: 0, shrink: 0 };
+    let powerupActivationMessage = { text: '', expiry: 0 }; // For big text display
 
-    // --- Setup Functions (initializeStars, createGlowdrop, createFireworks, lerp - unchanged) ---
-    function initializeStars() {
-        stars = [];
-        const starCount = Math.floor((SCREEN_WIDTH * SCREEN_HEIGHT) / 8000);
-        for (let i = 0; i < starCount; i++) {
-            stars.push({
-                x: Math.random() * SCREEN_WIDTH, y: Math.random() * SCREEN_HEIGHT,
-                radius: Math.random() * 1.5 + 0.5, alpha: Math.random() * 0.5 + 0.3
-            });
-        }
+
+    // --- Setup Functions ---
+    function initializeStars() { /* ... unchanged ... */
+        stars = []; const starCount = Math.floor((SCREEN_WIDTH * SCREEN_HEIGHT) / 8000);
+        for (let i = 0; i < starCount; i++) { stars.push({ x: Math.random() * SCREEN_WIDTH, y: Math.random() * SCREEN_HEIGHT, radius: Math.random() * 1.5 + 0.5, alpha: Math.random() * 0.5 + 0.3 }); }
     }
-    function createGlowdrop() { /* ... same as before ... */
-        const colorName = COLOR_NAMES[Math.floor(Math.random() * COLOR_NAMES.length)];
-        return {
-            id: Date.now() + Math.random(),
-            x: Math.random() * (SCREEN_WIDTH - GLOWDROP_RADIUS * 2) + GLOWDROP_RADIUS,
-            y: -GLOWDROP_RADIUS * 2,
-            radius: GLOWDROP_RADIUS * (Math.random() * 0.2 + 0.9),
-            colorName: colorName, colorRgb: COLORS[colorName],
-            speed: Math.random() * (GLOWDROP_SPEED_MAX - GLOWDROP_SPEED_MIN) + GLOWDROP_SPEED_MIN,
-            rotation: Math.random() * Math.PI * 2, rotationSpeed: (Math.random() - 0.5) * 0.04
-        };
+
+    function createGlowdrop() { /* ... unchanged ... */
+        const colorName = COLOR_NAMES[Math.floor(Math.random() * COLOR_NAMES.length)]; let type = 'normal'; if (Math.random() < SPECIAL_DROP_CHANCE) { type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)]; } const isSpecial = type !== 'normal';
+        return { id: Date.now() + Math.random(), x: Math.random() * (SCREEN_WIDTH - GLOWDROP_RADIUS * 2) + GLOWDROP_RADIUS, y: -GLOWDROP_RADIUS * 2, radius: GLOWDROP_RADIUS * (Math.random() * 0.2 + 0.9) * (isSpecial ? 1.15 : 1), colorName: colorName, colorRgb: COLORS[colorName], speed: Math.random() * (GLOWDROP_SPEED_MAX - GLOWDROP_SPEED_MIN) + GLOWDROP_SPEED_MIN, rotation: Math.random() * Math.PI * 2, rotationSpeed: (Math.random() - 0.5) * 0.04 * (isSpecial ? 1.5 : 1), type: type, };
     }
-    function createFireworks(x, y, baseColor) { /* ... same as before ... */
-        const hue = Math.random() * 360;
-        for (let i = 0; i < PARTICLE_COUNT_FIREWORK; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * PARTICLE_SPEED_FIREWORK + 1;
-            const life = PARTICLE_LIFE_FIREWORK * (Math.random() * 0.5 + 0.5);
-            const particleColor = `hsl(${hue + (Math.random() - 0.5) * 60}, 100%, ${Math.random() * 30 + 60}%)`;
-            particles.push({
-                x: x, y: y, vx: Math.cos(angle) * speed * (Math.random()*0.5+0.5), vy: Math.sin(angle) * speed * (Math.random()*0.5+0.5) - 0.5,
-                life: life, maxLife: life, color: particleColor, radius: Math.random() * 3 + 2, gravity: 0.04, fades: true
-            });
-        }
+
+    function createFireworks(x, y, baseColor) { /* ... unchanged ... */
+        const hue = Math.random() * 360; const count = (baseColor === 'gold' || baseColor === 'white') ? PARTICLE_COUNT_FIREWORK * 1.5 : PARTICLE_COUNT_FIREWORK;
+        for (let i = 0; i < count; i++) { const angle = Math.random() * Math.PI * 2; const speed = Math.random() * PARTICLE_SPEED_FIREWORK + 1; const life = PARTICLE_LIFE_FIREWORK * (Math.random() * 0.5 + 0.5); let particleColor = `hsl(${hue + (Math.random() - 0.5) * 60}, 100%, ${Math.random() * 30 + 60}%)`; if (baseColor === 'gold') particleColor = `hsl(${40 + Math.random()*20}, 100%, ${60 + Math.random()*20}%)`; if (baseColor === 'white') particleColor = `hsl(0, 0%, ${80 + Math.random()*20}%)`; particles.push({ x: x, y: y, vx: Math.cos(angle) * speed * (Math.random()*0.5+0.5), vy: Math.sin(angle) * speed * (Math.random()*0.5+0.5) - 0.5, life: life, maxLife: life, color: particleColor, radius: Math.random() * 3 + 2, gravity: 0.04, fades: true }); }
     }
-    function lerp(start, end, amount) { return start + (end - start) * amount; }
+
+    function lerp(start, end, amount) { /* ... unchanged ... */ return start + (end - start) * amount; }
 
 
     // --- Debug Panel Functions ---
-    function toggleDebugPanel(event) {
-        if (event.key === '`') { // Backtick key
-            event.preventDefault(); // Prevent typing the backtick if used in a text field
-            const isHidden = debugPanelElement.style.display === 'none';
-            debugPanelElement.style.display = isHidden ? 'block' : 'none';
-        }
+    function toggleDebugPanel(event) { /* ... unchanged ... */ if (event.key === '`') { event.preventDefault(); const isHidden = debugPanelElement.style.display === 'none'; debugPanelElement.style.display = isHidden ? 'block' : 'none'; }}
+    function updateDebugPanel() { /* ... unchanged ... */ if (debugPanelElement.style.display !== 'none') { debugScoreElement.textContent = score; debugDropsElement.textContent = glowdrops.length; debugParticlesElement.textContent = particles.length; debugSizeElement.textContent = catcherSizeMultiplier.toFixed(3); debugSmoothingElement.textContent = currentSmoothing.toFixed(3); debugGameTimeElement.textContent = Math.floor(gameTime); }}
+    function setupDebugInputs() { /* ... unchanged, listeners update global let vars ... */
+        inputSpawnElement.value = GLOWDROP_SPAWN_INTERVAL; inputMaxDropsElement.value = MAX_GLOWDROPS; inputGrowthElement.value = GROWTH_RATE; inputSmoothingElement.value = INITIAL_SMOOTHING; inputMinSmoothingElement.value = MIN_SMOOTHING; inputMaxMultElement.value = MAX_CATCHER_MULTIPLIER; inputSpecialChanceElement.value = SPECIAL_DROP_CHANCE * 100; inputPowerupDurationElement.value = POWERUP_DURATION; inputScoreMultiElement.value = SCORE_MULTIPLIER; inputShrinkFactorElement.value = SHRINK_FACTOR; inputGravityElement.value = GRAVITY_FORCE; inputTailMultiElement.value = TAIL_LENGTH_MULTIPLIER;
+        inputSpawnElement.addEventListener('change', (e) => { const val = parseInt(e.target.value, 10); if (!isNaN(val) && val >= 50) GLOWDROP_SPAWN_INTERVAL = val; e.target.value = GLOWDROP_SPAWN_INTERVAL; }); inputMaxDropsElement.addEventListener('change', (e) => { const val = parseInt(e.target.value, 10); if (!isNaN(val) && val >= 1) MAX_GLOWDROPS = val; e.target.value = MAX_GLOWDROPS; }); inputGrowthElement.addEventListener('change', (e) => { const val = parseFloat(e.target.value); if (!isNaN(val) && val >= 0) GROWTH_RATE = val; e.target.value = GROWTH_RATE.toFixed(3); }); inputSmoothingElement.addEventListener('change', (e) => { const val = parseFloat(e.target.value); if (!isNaN(val) && val >= 0.01 && val <= 0.5) INITIAL_SMOOTHING = val; e.target.value = INITIAL_SMOOTHING.toFixed(2); }); inputMinSmoothingElement.addEventListener('change', (e) => { const val = parseFloat(e.target.value); if (!isNaN(val) && val >= 0.01 && val <= 0.2) MIN_SMOOTHING = val; e.target.value = MIN_SMOOTHING.toFixed(3); }); inputMaxMultElement.addEventListener('change', (e) => { const val = parseFloat(e.target.value); if (!isNaN(val) && val >= 1.0) MAX_CATCHER_MULTIPLIER = val; e.target.value = MAX_CATCHER_MULTIPLIER.toFixed(1); }); inputSpecialChanceElement.addEventListener('change', (e) => { const val = parseFloat(e.target.value); if (!isNaN(val) && val >= 0 && val <= 100) SPECIAL_DROP_CHANCE = val / 100; e.target.value = (SPECIAL_DROP_CHANCE * 100).toFixed(1); }); inputPowerupDurationElement.addEventListener('change', (e) => { const val = parseInt(e.target.value, 10); if (!isNaN(val) && val >= 1000) POWERUP_DURATION = val; e.target.value = POWERUP_DURATION; }); inputScoreMultiElement.addEventListener('change', (e) => { const val = parseInt(e.target.value, 10); if (!isNaN(val) && val >= 1) SCORE_MULTIPLIER = val; e.target.value = SCORE_MULTIPLIER; }); inputShrinkFactorElement.addEventListener('change', (e) => { const val = parseFloat(e.target.value); if (!isNaN(val) && val >= 0.1 && val <= 1.0) SHRINK_FACTOR = val; e.target.value = SHRINK_FACTOR.toFixed(2); }); inputGravityElement.addEventListener('change', (e) => { const val = parseFloat(e.target.value); if (!isNaN(val) && val >= 0) GRAVITY_FORCE = val; e.target.value = GRAVITY_FORCE.toFixed(2); }); inputTailMultiElement.addEventListener('change', (e) => { const val = parseFloat(e.target.value); if (!isNaN(val) && val >= 1.0) TAIL_LENGTH_MULTIPLIER = val; e.target.value = TAIL_LENGTH_MULTIPLIER.toFixed(1); });
     }
 
-    function updateDebugPanel() {
-        // Only update if visible for performance
-        if (debugPanelElement.style.display !== 'none') {
-            debugScoreElement.textContent = score;
-            debugDropsElement.textContent = glowdrops.length;
-            debugParticlesElement.textContent = particles.length;
-            debugSizeElement.textContent = catcherSizeMultiplier.toFixed(3);
-            debugSmoothingElement.textContent = currentSmoothing.toFixed(3);
-            debugGameTimeElement.textContent = Math.floor(gameTime);
-        }
-    }
-
-    function setupDebugInputs() {
-        // Set initial input values from game vars
-        inputSpawnElement.value = GLOWDROP_SPAWN_INTERVAL;
-        inputMaxDropsElement.value = MAX_GLOWDROPS;
-        inputGrowthElement.value = GROWTH_RATE;
-        inputSmoothingElement.value = INITIAL_SMOOTHING;
-        inputMinSmoothingElement.value = MIN_SMOOTHING;
-        inputMaxMultElement.value = MAX_CATCHER_MULTIPLIER;
-
-        // Add listeners to update game vars when inputs change
-        inputSpawnElement.addEventListener('change', (e) => {
-            const val = parseInt(e.target.value, 10);
-            if (!isNaN(val) && val >= 50) GLOWDROP_SPAWN_INTERVAL = val;
-            e.target.value = GLOWDROP_SPAWN_INTERVAL; // Update input in case value was invalid/clamped
-        });
-        inputMaxDropsElement.addEventListener('change', (e) => {
-            const val = parseInt(e.target.value, 10);
-            if (!isNaN(val) && val >= 1) MAX_GLOWDROPS = val;
-            e.target.value = MAX_GLOWDROPS;
-        });
-        inputGrowthElement.addEventListener('change', (e) => {
-            const val = parseFloat(e.target.value);
-            if (!isNaN(val) && val >= 0) GROWTH_RATE = val;
-            e.target.value = GROWTH_RATE.toFixed(3);
-        });
-        inputSmoothingElement.addEventListener('change', (e) => {
-            const val = parseFloat(e.target.value);
-            if (!isNaN(val) && val >= 0.01 && val <= 0.5) INITIAL_SMOOTHING = val;
-            e.target.value = INITIAL_SMOOTHING.toFixed(2);
-        });
-        inputMinSmoothingElement.addEventListener('change', (e) => {
-            const val = parseFloat(e.target.value);
-            if (!isNaN(val) && val >= 0.01 && val <= 0.2) MIN_SMOOTHING = val;
-            e.target.value = MIN_SMOOTHING.toFixed(3);
-        });
-        inputMaxMultElement.addEventListener('change', (e) => {
-            const val = parseFloat(e.target.value);
-            if (!isNaN(val) && val >= 1.0) MAX_CATCHER_MULTIPLIER = val;
-            e.target.value = MAX_CATCHER_MULTIPLIER.toFixed(1);
-        });
-    }
 
     // --- Game Loop ---
     function gameLoop(currentTime) {
         gameTime = currentTime;
         update(currentTime);
         draw();
-        updateDebugPanel(); // Update debug panel values
+        updateDebugPanel();
         requestAnimationFrame(gameLoop);
     }
 
+
     // --- Update Function ---
     function update(currentTime) {
-        // Calculate current smoothing based on size
-        currentSmoothing = Math.max(MIN_SMOOTHING, INITIAL_SMOOTHING / (1 + (catcherSizeMultiplier - 1) * 0.7));
+        // Check Active Powerups
+        const isTailActive = activePowerups.tail > currentTime;
+        const isGravityActive = activePowerups.gravity > currentTime;
+        const isScoreFrenzyActive = activePowerups.score > currentTime;
+        const isShrinkActive = activePowerups.shrink > currentTime;
+
+        // Apply Effects Based on Powerups
+        let currentSizeMultiplier = catcherSizeMultiplier * (isShrinkActive ? SHRINK_FACTOR : 1);
+        let currentTrailTargetLength = TRAIL_LENGTH * (isTailActive ? TAIL_LENGTH_MULTIPLIER : 1);
+        let effectiveSizeForSmoothing = catcherSizeMultiplier * (isShrinkActive ? SHRINK_FACTOR : 1);
+        currentSmoothing = Math.min(INITIAL_SMOOTHING * 1.5 / SHRINK_FACTOR, Math.max(MIN_SMOOTHING, INITIAL_SMOOTHING / (1 + (effectiveSizeForSmoothing - 1) * 0.7)));
 
         // Move catcher
         catcherX = lerp(catcherX, mouseX, currentSmoothing);
@@ -336,153 +256,166 @@
 
         // Update trail
         trailPoints.push({ x: catcherX, y: catcherY, time: currentTime });
-        while (trailPoints.length > TRAIL_LENGTH) { trailPoints.shift(); }
+        while (trailPoints.length > currentTrailTargetLength) { trailPoints.shift(); }
 
         // --- Glowdrop Logic ---
         // Spawn
         if (currentTime - lastSpawnTime > GLOWDROP_SPAWN_INTERVAL && glowdrops.length < MAX_GLOWDROPS) {
-            glowdrops.push(createGlowdrop());
-            lastSpawnTime = currentTime;
+            glowdrops.push(createGlowdrop()); lastSpawnTime = currentTime;
         }
 
         // Move and check collision
-        const currentTrailEffectiveWidth = (INITIAL_CATCHER_RADIUS * 1.8) * catcherSizeMultiplier; // Use base width related to base radius
+        const currentTrailEffectiveWidth = (INITIAL_CATCHER_RADIUS * 1.8) * currentSizeMultiplier;
 
         for (let i = glowdrops.length - 1; i >= 0; i--) {
             const drop = glowdrops[i];
-            drop.y += drop.speed;
-            drop.rotation += drop.rotationSpeed;
 
+            // Apply Gravity Well effect
+            if (isGravityActive && drop.type === 'normal') {
+                const dx = catcherX - drop.x; const dy = catcherY - drop.y; const distSq = dx*dx + dy*dy; const gravityRadius = SCREEN_HEIGHT * 0.4; const gravityRadiusSq = gravityRadius * gravityRadius;
+                if (distSq < gravityRadiusSq && distSq > 100) {
+                    const dist = Math.sqrt(distSq); const force = GRAVITY_FORCE * (1 - dist / gravityRadius) * 50; drop.x += (dx / dist) * force * (1/60); drop.y += (dy / dist) * force * (1/60);
+                }
+            }
+
+            // Normal Movement
+            drop.y += drop.speed; drop.rotation += drop.rotationSpeed;
+
+            // Collision Check
             let caught = false;
-            // Simplified Collision Check: Distance to trail points
-            for (let j = trailPoints.length - 1; j >= 0; j--) { // Check newer points first maybe?
-                const p1 = trailPoints[j];
-                const dx = drop.x - p1.x;
-                const dy = drop.y - p1.y;
-                const distSq = dx * dx + dy * dy;
-                const catchRadius = (currentTrailEffectiveWidth / 2) + drop.radius;
-                const catchRadiusSq = catchRadius * catchRadius;
-
+            for (let j = trailPoints.length - 1; j >= 0; j--) {
+                const p1 = trailPoints[j]; const dx = drop.x - p1.x; const dy = drop.y - p1.y; const distSq = dx * dx + dy * dy; const catchRadius = (currentTrailEffectiveWidth / 2) + drop.radius; const catchRadiusSq = catchRadius * catchRadius;
                 if (distSq < catchRadiusSq) {
                     // --- CATCH ---
-                    score += 10;
-                    catcherSizeMultiplier = Math.min(MAX_CATCHER_MULTIPLIER, catcherSizeMultiplier + GROWTH_RATE); // Get fatter!
-                    createFireworks(drop.x, drop.y, drop.colorRgb);
-                    glowdrops.splice(i, 1);
-                    caught = true;
-                    break;
+                    if (drop.type === 'normal') {
+                        const pointsToAdd = isScoreFrenzyActive ? 10 * SCORE_MULTIPLIER : 10; score += pointsToAdd; catcherSizeMultiplier = Math.min(MAX_CATCHER_MULTIPLIER, catcherSizeMultiplier + GROWTH_RATE); createFireworks(drop.x, drop.y, drop.colorRgb);
+                    } else {
+                        // Activate Powerup
+                        let activationText = '';
+                        if (drop.type === 'colorpop') {
+                            activationText = 'COLOR POP!';
+                            let poppedCount = 0; for (let k = glowdrops.length - 1; k >= 0; k--) { if (i === k || glowdrops[k].type !== 'normal' || glowdrops[k].colorName !== drop.colorName) continue; createFireworks(glowdrops[k].x, glowdrops[k].y, glowdrops[k].colorRgb); score += 5; glowdrops.splice(k, 1); poppedCount++; if (k < i) i--; }
+                            createFireworks(drop.x, drop.y, 'white');
+                        } else {
+                            // Timed effect
+                            activationText = `${drop.type.toUpperCase()}!`;
+                            activePowerups[drop.type] = currentTime + POWERUP_DURATION;
+                            createFireworks(drop.x, drop.y, 'gold');
+                        }
+                        // Set the activation message
+                        powerupActivationMessage = { text: activationText, expiry: currentTime + ACTIVATION_MESSAGE_DURATION };
+                    }
+                    glowdrops.splice(i, 1); caught = true; break;
                 }
-                // Optimization: If drop is way below the trail point, stop checking older points for this drop
-                if (drop.y < p1.y - catchRadius*2) break;
+                if (drop.y < p1.y - catchRadius * 2) break; // Optimization
             }
-
             // Remove if off-screen
-            if (!caught && drop.y - drop.radius > SCREEN_HEIGHT) {
-                glowdrops.splice(i, 1);
-            }
+            if (!caught && drop.y - drop.radius > SCREEN_HEIGHT) { glowdrops.splice(i, 1); }
         }
 
         // Update particles
-        for (let i = particles.length - 1; i >= 0; i--) {
-            const p = particles[i];
-            p.x += p.vx; p.y += p.vy;
-            if (p.gravity) { p.vy += p.gravity; }
-            p.life -= 1;
-            if (p.life <= 0) { particles.splice(i, 1); }
-        }
+        for (let i = particles.length - 1; i >= 0; i--) { /* ... particle update unchanged ... */ const p=particles[i];p.x+=p.vx;p.y+=p.vy;if(p.gravity){p.vy+=p.gravity;}p.life-=1;if(p.life<=0){particles.splice(i,1);}}
     }
+
 
     // --- Draw Function ---
     function draw() {
+        const currentTime = gameTime;
+
+        // --- Check Active Powerups ---
+        const isTailActive = activePowerups.tail > currentTime;
+        const isGravityActive = activePowerups.gravity > currentTime;
+        const isScoreFrenzyActive = activePowerups.score > currentTime;
+        const isShrinkActive = activePowerups.shrink > currentTime;
+
+        // --- FIX: Calculate size/radius *before* using them ---
+        const currentSizeMultiplier = catcherSizeMultiplier * (isShrinkActive ? SHRINK_FACTOR : 1);
+        const currentCatcherDisplayRadius = (INITIAL_CATCHER_RADIUS * currentSizeMultiplier) * (Math.sin(currentTime * 0.01) * 0.08 + 0.92); // Use currentTime
+        const currentTrailDisplayLength = TRAIL_LENGTH * (isTailActive ? TAIL_LENGTH_MULTIPLIER : 1);
+
         // Clear canvas
         ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        // Draw stars (unchanged)
-        stars.forEach(star => { /* ... */
-            ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha * (Math.sin(gameTime * 0.0005 + star.x * 0.1) * 0.2 + 0.8)})`;
-            ctx.beginPath(); ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2); ctx.fill();
-        });
+        // Draw stars
+        stars.forEach(star => { /* ... twinkle stars unchanged ... */ ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha * (Math.sin(currentTime * 0.0005 + star.x * 0.1) * 0.2 + 0.8)})`; ctx.beginPath(); ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2); ctx.fill(); });
 
-        // --- Draw Trail --- (Using scaled base width)
-        const baseTrailVisualWidth = (INITIAL_CATCHER_RADIUS * 1.8) * catcherSizeMultiplier;
-        if (trailPoints.length > 1) {
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            for (let i = 0; i < trailPoints.length - 1; i++) {
-                const p1 = trailPoints[i]; const p2 = trailPoints[i + 1];
-                const ratio = i / TRAIL_LENGTH;
-                const currentVisualWidth = baseTrailVisualWidth * (0.4 + ratio * 0.6);
-                ctx.lineWidth = currentVisualWidth;
-                const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${ratio * 0.4})`);
-                gradient.addColorStop(1, `rgba(255, 255, 255, ${ratio * 0.6 + 0.1})`);
-                ctx.strokeStyle = gradient;
-                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        // --- Draw Trail ---
+        const baseTrailVisualWidth = (INITIAL_CATCHER_RADIUS * 1.8) * currentSizeMultiplier;
+        if (trailPoints.length > 1) { /* ... trail drawing logic unchanged, using currentTrailDisplayLength for ratio ... */
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; const startIndex = Math.max(0, trailPoints.length - Math.floor(currentTrailDisplayLength));
+            for (let i = startIndex; i < trailPoints.length - 1; i++) { const p1 = trailPoints[i]; const p2 = trailPoints[i + 1]; const relativeIndex = i - startIndex; const visibleTrailLength = Math.max(1, trailPoints.length - startIndex -1); const ratio = Math.max(0, relativeIndex / visibleTrailLength); const currentVisualWidth = baseTrailVisualWidth * (0.4 + ratio * 0.6); ctx.lineWidth = currentVisualWidth; const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y); if (isScoreFrenzyActive && Math.random() < 0.15) { gradient.addColorStop(0, `rgba(255, 255, 100, ${ratio * 0.7 + 0.2})`); gradient.addColorStop(1, `rgba(255, 255, 100, ${ratio * 0.8 + 0.3})`); } else { gradient.addColorStop(0, `rgba(255, 255, 255, ${ratio * 0.4})`); gradient.addColorStop(1, `rgba(255, 255, 255, ${ratio * 0.6 + 0.1})`); } ctx.strokeStyle = gradient; ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); }
+        }
+
+        // --- Draw Gravity Well Visual ---
+        if (isGravityActive) {
+            const gravityRadius = SCREEN_HEIGHT * 0.4; ctx.beginPath(); ctx.arc(catcherX, catcherY, gravityRadius, 0, Math.PI * 2);
+            // FIX was here: use already calculated currentCatcherDisplayRadius
+            const grad = ctx.createRadialGradient(catcherX, catcherY, currentCatcherDisplayRadius, catcherX, catcherY, gravityRadius);
+            grad.addColorStop(0, 'rgba(200, 180, 255, 0)'); grad.addColorStop(1, 'rgba(200, 180, 255, 0.1)'); ctx.fillStyle = grad; ctx.fill();
+        }
+
+        // --- Draw Catcher --- (Uses pre-calculated currentCatcherDisplayRadius)
+        const catcherGradient = ctx.createRadialGradient(catcherX, catcherY, 0, catcherX, catcherY, currentCatcherDisplayRadius); catcherGradient.addColorStop(0,'rgba(255, 255, 255, 1)'); catcherGradient.addColorStop(0.5,'rgba(200, 220, 255, 0.9)'); catcherGradient.addColorStop(1,'rgba(150, 200, 255, 0)'); ctx.fillStyle = catcherGradient; ctx.shadowColor = 'rgba(200, 220, 255, 0.8)'; ctx.shadowBlur = currentCatcherDisplayRadius * 0.8; ctx.beginPath(); ctx.arc(catcherX, catcherY, currentCatcherDisplayRadius, 0, Math.PI * 2); ctx.fill();
+        // Star points
+        const numPoints = 5 + Math.floor(currentSizeMultiplier); for (let i = 0; i < numPoints; i++) { /* ... star points unchanged ... */ const angle = (i / numPoints) * Math.PI * 2 + currentTime * 0.002; const len = currentCatcherDisplayRadius * (1.2 + Math.sin(currentTime*0.015 + i)*0.1); ctx.lineWidth = Math.max(1, 2 * currentSizeMultiplier * 0.7); ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + Math.sin(currentTime*0.01 + i*1.5)*0.3})`; ctx.beginPath(); ctx.moveTo(catcherX, catcherY); ctx.lineTo(catcherX + Math.cos(angle) * len, catcherY + Math.sin(angle) * len); ctx.stroke(); } ctx.shadowBlur = 0;
+
+        // --- Draw Glowdrops --- (With special drop visuals)
+        glowdrops.forEach(drop => {
+            ctx.save(); ctx.translate(drop.x, drop.y); ctx.rotate(drop.rotation); const radius = drop.radius;
+            // Base gradient
+            const gradient = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius); const baseColor = drop.colorRgb; const match = baseColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/); if(match){const[_,r,g,b]=match; gradient.addColorStop(0,`rgba(${r},${g},${b},1)`); gradient.addColorStop(0.7,`rgba(${r},${g},${b},0.9)`); gradient.addColorStop(1,`rgba(${r},${g},${b},0.5)`);}else{gradient.addColorStop(0,baseColor); gradient.addColorStop(1,baseColor);} ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fillStyle = gradient; ctx.shadowColor = drop.colorRgb; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+            // Special cue
+            if (drop.type !== 'normal') {
+                const pulseAlpha = Math.sin(currentTime * 0.005 + drop.id) * 0.3 + 0.7; ctx.strokeStyle = `rgba(255, 255, 255, ${pulseAlpha})`; ctx.lineWidth = 2; ctx.shadowColor = 'white'; ctx.shadowBlur = 5; ctx.stroke();
+                const symbol = POWERUP_VISUALS[drop.type] || '?'; ctx.fillStyle = `rgba(255, 255, 255, ${pulseAlpha})`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `bold ${radius * 1.2}px sans-serif`; ctx.shadowColor = 'black'; ctx.shadowBlur = 2; ctx.fillText(symbol, 0, radius * 0.1);
             }
-        }
-
-        // --- Draw Catcher --- (Using scaled base radius)
-        const currentCatcherDisplayRadius = (INITIAL_CATCHER_RADIUS * catcherSizeMultiplier) * (Math.sin(gameTime * 0.01) * 0.08 + 0.92);
-        const catcherGradient = ctx.createRadialGradient(catcherX, catcherY, 0, catcherX, catcherY, currentCatcherDisplayRadius);
-        /* ... gradient stops unchanged ... */
-        catcherGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        catcherGradient.addColorStop(0.5, 'rgba(200, 220, 255, 0.9)');
-        catcherGradient.addColorStop(1, 'rgba(150, 200, 255, 0)');
-        ctx.fillStyle = catcherGradient;
-        ctx.shadowColor = 'rgba(200, 220, 255, 0.8)';
-        ctx.shadowBlur = currentCatcherDisplayRadius * 0.8;
-        ctx.beginPath();
-        ctx.arc(catcherX, catcherY, currentCatcherDisplayRadius, 0, Math.PI * 2);
-        ctx.fill();
-        // Star points (unchanged logic, uses current radius)
-        const numPoints = 5 + Math.floor(catcherSizeMultiplier - 1);
-        for (let i = 0; i < numPoints; i++) {
-            const angle = (i / numPoints) * Math.PI * 2 + gameTime * 0.002;
-            const len = currentCatcherDisplayRadius * (1.2 + Math.sin(gameTime*0.015 + i)*0.1);
-            ctx.lineWidth = Math.max(1, 2 * catcherSizeMultiplier * 0.7);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + Math.sin(gameTime*0.01 + i*1.5)*0.3})`;
-            ctx.beginPath(); ctx.moveTo(catcherX, catcherY); ctx.lineTo(catcherX + Math.cos(angle) * len, catcherY + Math.sin(angle) * len); ctx.stroke();
-        }
-        ctx.shadowBlur = 0;
-
-
-        // Draw Glowdrops (unchanged)
-        glowdrops.forEach(drop => { /* ... */
-            ctx.save(); ctx.translate(drop.x, drop.y); ctx.rotate(drop.rotation);
-            const radius = drop.radius; const gradient = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius);
-            const baseColor = drop.colorRgb; const match = baseColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-            if(match){ const[_,r,g,b]=match; gradient.addColorStop(0,`rgba(${r},${g},${b},1)`); gradient.addColorStop(0.7,`rgba(${r},${g},${b},0.9)`); gradient.addColorStop(1,`rgba(${r},${g},${b},0.5)`);}else{gradient.addColorStop(0,baseColor); gradient.addColorStop(1,baseColor);}
-            ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fillStyle = gradient; ctx.shadowColor = drop.colorRgb; ctx.shadowBlur = 8; ctx.fill(); ctx.restore();
+            ctx.restore();
         });
         ctx.shadowBlur = 0;
 
+        // Draw Particles
+        particles.forEach(p => { /* ... particle drawing unchanged ... */ const alpha=p.life/p.maxLife;ctx.beginPath();ctx.arc(p.x,p.y,p.radius*alpha,0,Math.PI*2);if(p.color.startsWith('hsl')){const match=p.color.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);if(match){const[_,h,s,l]=match;const fadedL=parseFloat(l)*alpha+50*(1-alpha);ctx.fillStyle=`hsla(${h},${s}%,${fadedL}%,${alpha})`;}else{ctx.fillStyle=p.color;}}else{const match=p.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);if(match){ctx.fillStyle=`rgba(${match[1]},${match[2]},${match[3]},${p.fades?alpha:1})`;}else{ctx.fillStyle=p.color;}}ctx.fill(); });
 
-        // Draw Particles (Fireworks - updated HSL fading)
-        particles.forEach(p => { /* ... */
-            const alpha = p.life / p.maxLife;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * alpha, 0, Math.PI * 2);
-            if (p.color.startsWith('hsl')) {
-                const match = p.color.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);
-                if (match) { const [_, h, s, l] = match; const fadedL = parseFloat(l) * alpha + 50 * (1-alpha); ctx.fillStyle = `hsla(${h}, ${s}%, ${fadedL}%, ${alpha})`;} else { ctx.fillStyle = p.color;}
-            } else { const match = p.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/); if(match){ ctx.fillStyle = `rgba(${match[1]},${match[2]},${match[3]},${p.fades?alpha:1})`;} else { ctx.fillStyle = p.color; }}
-            ctx.fill();
-        });
+        // --- Draw Powerup Activation Text ---
+        if (powerupActivationMessage.expiry > currentTime) {
+            const remainingTime = powerupActivationMessage.expiry - currentTime;
+            const remainingRatio = Math.max(0, remainingTime / ACTIVATION_MESSAGE_DURATION); // 1 down to 0
+            const alpha = Math.sin(remainingRatio * Math.PI); // Fade in/out using sine curve
+            const baseFontSize = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT) / 10; // Responsive base size
+            const fontSize = baseFontSize * (0.6 + remainingRatio * 0.6); // Scale down from 1.2 to 0.6
 
-        // Score Display
+            ctx.font = `bold ${fontSize}px 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = `rgba(255, 255, 100, ${alpha * 0.9})`; // Semi-transparent yellow
+            ctx.strokeStyle = `rgba(0, 0, 0, ${alpha * 0.7})`; // Black outline
+            ctx.lineWidth = Math.max(1, fontSize / 20); // Outline relative to font size, min 1px
+
+            ctx.strokeText(powerupActivationMessage.text, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3); // Positioned higher up
+            ctx.fillText(powerupActivationMessage.text, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3);
+        }
+
+
+        // Draw Score
         scoreDisplay.textContent = `Score: ${score}`;
+
+        // Draw Active Powerup Timers (bottom right)
+        let yOffset = SCREEN_HEIGHT - 20; ctx.font = 'bold 16px monospace'; ctx.textAlign = 'right'; ctx.shadowColor = 'black'; ctx.shadowBlur = 3;
+        for (const type in activePowerups) { /* ... timer display unchanged ... */
+            if (activePowerups[type] > currentTime) { const remaining = ((activePowerups[type] - currentTime) / 1000).toFixed(1); let displayColor = 'rgba(255, 255, 255, 0.9)'; if (type === 'score') displayColor = 'rgba(255, 255, 100, 0.9)'; if (type === 'gravity') displayColor = 'rgba(200, 180, 255, 0.9)'; if (type === 'tail') displayColor = 'rgba(150, 200, 255, 0.9)'; if (type === 'shrink') displayColor = 'rgba(150, 255, 180, 0.9)'; ctx.fillStyle = displayColor; ctx.fillText(`${type.toUpperCase()}: ${remaining}s`, SCREEN_WIDTH - 15, yOffset); yOffset -= 25; }
+        } ctx.shadowBlur = 0;
     }
 
+
     // --- Event Listeners ---
-    canvas.addEventListener('mousemove', function(event) {
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-    });
-    // No mouseleave listener currently needed
+    canvas.addEventListener('mousemove', function(event) { mouseX = event.clientX; mouseY = event.clientY; });
+    window.addEventListener('keydown', toggleDebugPanel);
+
 
     // --- Start ---
-    window.addEventListener('keydown', toggleDebugPanel); // Listener for debug toggle
-    setupDebugInputs(); // Initialize debug inputs and listeners
-    initializeStars(); // Initial star setup
-    requestAnimationFrame(gameLoop); // Start the main loop
+    setupDebugInputs();
+    initializeStars();
+    requestAnimationFrame(gameLoop);
 
 </script>
 
