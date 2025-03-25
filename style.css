@@ -1,0 +1,121 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#webgl-container {
+    position: fixed; /* Changed from absolute to fixed */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* WebGL behind labels but above background */
+}
+
+#css2d-labels {
+    position: fixed; /* Use fixed positioning like the canvas */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2; /* Labels on top of WebGL */
+    pointer-events: none; /* Allow clicks/interactions to pass through to WebGL canvas */
+    overflow: hidden; /* Prevent potential scrollbars if labels go off-screen */
+    color: #fff; /* Default label color */
+}
+
+/* Individual label styling */
+.endpoint-label {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    color: #ffffff; /* Default */
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
+    padding: 2px 5px;
+    border-radius: 3px;
+    white-space: nowrap; /* Prevent wrapping */
+    /* pointer-events: auto; */ /* Uncomment if you want labels to be interactive */
+}
+
+/* Status-specific label colors (optional) */
+.endpoint-label.status-ok {
+    color: #00ff00;
+    /* border: 1px solid #00ff00; */
+}
+.endpoint-label.status-error {
+    color: #ff0000;
+    /* border: 1px solid #ff0000; */
+}
+.endpoint-label.status-timeout {
+    color: #ffa500;
+    /* border: 1px solid #ffa500; */
+}
+.endpoint-label.status-pending {
+    color: #ffff00;
+}
+.endpoint-label.status-proxy_error,
+.endpoint-label.status-invalid_request {
+    color: #aaaaaa; /* Grey for proxy/setup issues */
+}
+
+
+#monitor-ui {
+    position: fixed; /* Keep UI fixed */
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0, 20, 0, 0.8);
+    border: 1px solid #00ff00;
+    padding: 15px;
+    border-radius: 5px;
+    z-index: 10; /* UI always on top */
+    max-width: 300px;
+}
+
+#monitor-ui h2 {
+    margin-top: 0;
+    font-size: 1.2em;
+    border-bottom: 1px solid #00ff00;
+    padding-bottom: 5px;
+}
+
+#monitor-ui label {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+#monitor-ui input {
+    width: calc(100% - 12px); /* Adjust for padding */
+    background-color: #001100;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 5px;
+    margin-top: 3px;
+    font-family: inherit;
+}
+
+#monitor-ui button {
+    margin-top: 15px;
+    background-color: #003300;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#monitor-ui button:hover {
+    background-color: #00ff00;
+    color: #000;
+}
+
+.warning {
+    margin-top: 15px;
+    font-size: 0.8em;
+    color: #ffcc00; /* Yellowish warning color */
+    border-top: 1px dashed #555;
+    padding-top: 10px;
+}
